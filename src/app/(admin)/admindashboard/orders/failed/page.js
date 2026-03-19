@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllOrders from "@/components/admin/AllOrders";
 
 export const metadata = {
@@ -22,7 +23,9 @@ export default function FailedDeliveriesPage() {
           </div>
         </div>
       </div>
-      <AllOrders presetStatus="cancelled" />
+      <Suspense>
+        <AllOrders presetStatus="cancelled" />
+      </Suspense>
     </div>
   );
 }

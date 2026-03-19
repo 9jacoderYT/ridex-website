@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllOrders from "@/components/admin/AllOrders";
 
 export const metadata = {
@@ -22,7 +23,9 @@ export default function PODPage() {
           </div>
         </div>
       </div>
-      <AllOrders presetStatus="delivered" />
+      <Suspense>
+        <AllOrders presetStatus="delivered" />
+      </Suspense>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllOrders from "@/components/admin/AllOrders";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function OrdersPage() {
-  return <AllOrders />;
+  return (
+    <Suspense>
+      <AllOrders />
+    </Suspense>
+  );
 }
