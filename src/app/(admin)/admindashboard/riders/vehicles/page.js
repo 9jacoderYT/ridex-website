@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllRiders from "@/components/admin/AllRiders";
 
 export const metadata = {
@@ -22,7 +23,9 @@ export default function VehiclesPage() {
           </div>
         </div>
       </div>
-      <AllRiders />
+      <Suspense>
+        <AllRiders />
+      </Suspense>
     </div>
   );
 }

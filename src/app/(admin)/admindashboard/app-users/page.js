@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AppUsers from "@/components/admin/AppUsers";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function AppUsersPage() {
-  return <AppUsers />;
+  return (
+    <Suspense>
+      <AppUsers />
+    </Suspense>
+  );
 }

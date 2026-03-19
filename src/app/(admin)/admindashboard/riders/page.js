@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllRiders from "@/components/admin/AllRiders";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function RidersPage() {
-  return <AllRiders />;
+  return (
+    <Suspense>
+      <AllRiders />
+    </Suspense>
+  );
 }

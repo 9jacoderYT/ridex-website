@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AllRiders from "@/components/admin/AllRiders";
 
 export const metadata = {
@@ -22,7 +23,9 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
-      <AllRiders presetStatus="inactive" />
+      <Suspense>
+        <AllRiders presetStatus="inactive" />
+      </Suspense>
     </div>
   );
 }

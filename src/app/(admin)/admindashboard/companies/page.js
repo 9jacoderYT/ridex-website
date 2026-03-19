@@ -1,7 +1,12 @@
 // Path: app/admindashboard/companies/page.js
 
+import { Suspense } from "react";
 import AllCompanies from "@/components/admin/AllCompanies";
 
 export default function AllCompaniesPage() {
-  return <AllCompanies />;
+  return (
+    <Suspense>
+      <AllCompanies />
+    </Suspense>
+  );
 }
