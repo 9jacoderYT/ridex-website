@@ -1,0 +1,198 @@
+================================================================================
+RIDER AUTHENTICATION SYSTEM - OVERVIEW FOR MOBILE APP
+================================================================================
+
+This document explains how rider authentication works for the Ridex mobile app.
+
+--------------------------------------------------------------------------------
+HOW RIDERS ARE CREATED
+--------------------------------------------------------------------------------
+
+1. Riders are registered by their COMPANY through the company dashboard
+   - URL: /company/register-rider
+   - Companies fill out a multi-step form with rider details
+
+2. During registration, TWO things happen:
+   a) A Supabase Auth account is created for the rider
+   b) A record is inserted into the "riders" table
+
+3. The rider does NOT register themselves - the company does it for them
+
+--------------------------------------------------------------------------------
+RIDER LOGIN CREDENTIALS
+--------------------------------------------------------------------------------
+
+Email:    The email address provided during registration
+Password: The rider's DRIVER LICENSE NUMBER (used as password)
+
+Example:
+  - Email: rider@example.com
+  - Password: DL12345678 (their driver license number)
+
+The company is shown these credentials after registration and shares them
+with the rider.
+
+--------------------------------------------------------------------------------
+SUPABASE AUTH SETUP
+--------------------------------------------------------------------------------
+
+When a rider is registered, we use:
+
+  supabaseAdmin.auth.admin.createUser({
+    email: email,
+    password: driver_license_number,
+    email_confirm: true,
+    user_metadata: {
+      name: name,
+      role: "rider",
+      company_id: company_id,
+    },
+  });
+
+Key points:
+- email_confirm: true means the email is auto-confirmed (no verification needed)
+- user_metadata contains: name, role ("rider"), and company_id
+- The auth user ID is stored in riders.auth_user_id
+
+--------------------------------------------------------------------------------
+HOW TO LOGIN IN THE MOBILE APP
+--------------------------------------------------------------------------------
+
+Use Supabase Auth with the ANON KEY (not service role key):
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password,  // This is the driver license number
+  });
+
+On successful login:
+- data.user contains the authenticated user
+- data.user.user_metadata has { name, role, company_id }
+- data.session contains the JWT session token
+
+--------------------------------------------------------------------------------
+FETCHING RIDER PROFILE AFTER LOGIN
+--------------------------------------------------------------------------------
+
+After login, fetch the full rider profile from the "riders" table:
+
+  const { data: rider } = await supabase
+    .from("riders")
+    .select("*")
+    .eq("auth_user_id", user.id)
+    .single();
+
+This gives you access to:
+- name, email, phone
+- vehicle_type (car/bike), plate_number, driver_license_number
+- guarantor_name, guarantor_phone
+- vehicle_photo_url, rider_photo_url, plate_photo_url
+- company_id, is_active, status
+- created_at
+
+--------------------------------------------------------------------------------
+RIDERS TABLE SCHEMA
+--------------------------------------------------------------------------------
+
+Table: riders
+
+Columns:
+- id (UUID, primary key)
+- auth_user_id (UUID, references auth.users)
+- company_id (UUID, references companies)
+- name (VARCHAR)
+- email (VARCHAR, unique)
+- phone (VARCHAR)
+- vehicle_type (VARCHAR: 'car' or 'bike')
+- plate_number (VARCHAR)
+- driver_license_number (VARCHAR)
+- guarantor_name (VARCHAR)
+- guarantor_phone (VARCHAR)
+- vehicle_photo_url (TEXT)
+- rider_photo_url (TEXT)
+- plate_photo_url (TEXT)
+- is_active (BOOLEAN, default true)
+- status (VARCHAR: 'active', 'inactive', 'suspended')
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+--------------------------------------------------------------------------------
+IMPORTANT NOTES
+--------------------------------------------------------------------------------
+
+1. RLS (Row Level Security):
+   - The website uses the SERVICE ROLE KEY (bypasses RLS)
+   - The mobile app uses the ANON KEY (must respect RLS)
+   - You'll need RLS policies on the riders table for the app to work
+
+2. Recommended RLS policies for riders table:
+
+   -- Riders can read their own profile
+   CREATE POLICY "Riders can view own profile"
+   ON riders FOR SELECT
+   USING (auth.uid() = auth_user_id);
+
+   -- Riders can update their own profile
+   CREATE POLICY "Riders can update own profile"
+   ON riders FOR UPDATE
+   USING (auth.uid() = auth_user_id);
+
+3. Session persistence:
+   - Use supabase.auth.onAuthStateChange() to listen for auth changes
+   - Store session in secure storage (not AsyncStorage for tokens)
+
+4. Logout:
+   await supabase.auth.signOut();
+
+--------------------------------------------------------------------------------
+QUICK START CODE FOR MOBILE APP
+--------------------------------------------------------------------------------
+
+// Initialize Supabase client (use ANON key, not service role)
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'YOUR_SUPABASE_URL',
+  'YOUR_SUPABASE_ANON_KEY'
+);
+
+// Login function
+async function loginRider(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password, // driver license number
+  });
+
+  if (error) throw error;
+
+  // Fetch rider profile
+  const { data: rider } = await supabase
+    .from('riders')
+    .select('*')
+    .eq('auth_user_id', data.user.id)
+    .single();
+
+  return { user: data.user, session: data.session, rider };
+}
+
+// Check if user is logged in
+async function getCurrentRider() {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: rider } = await supabase
+    .from('riders')
+    .select('*')
+    .eq('auth_user_id', user.id)
+    .single();
+
+  return rider;
+}
+
+// Logout
+async function logout() {
+  await supabase.auth.signOut();
+}
+
+================================================================================
