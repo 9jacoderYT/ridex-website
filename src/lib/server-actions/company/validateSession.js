@@ -25,16 +25,6 @@ export async function validateCompanySession() {
       return { success: false, error: "Company not found" };
     }
 
-    // Check if account is still active
-    if (!company.is_active) {
-      // Clear the session cookie since account is no longer active
-      cookieStore.delete("company_session");
-      return {
-        success: false,
-        error: "Your account has been deactivated. Please contact support.",
-      };
-    }
-
     // Remove password hash from response
     const { password_hash, ...sanitizedCompany } = company;
 

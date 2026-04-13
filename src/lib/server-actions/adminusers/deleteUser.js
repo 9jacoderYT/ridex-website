@@ -8,17 +8,18 @@ export async function deleteUser(userId) {
       return { success: false, error: "User ID is required" };
     }
 
-    // Check if user is trying to delete the default admin
+    // Prevent deleting the Super Admin env var account (if it exists in DB)
     const { data: user } = await supabaseAdmin
       .from("admin_users")
-      .select("username")
+      .select("email")
       .eq("id", userId)
       .single();
 
-    if (user?.username === "admin") {
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
+    if (superAdminEmail && user?.email?.toLowerCase() === superAdminEmail) {
       return {
         success: false,
-        error: "Cannot delete default admin user",
+        error: "Cannot delete the Super Admin account",
       };
     }
 

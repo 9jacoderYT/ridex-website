@@ -11,6 +11,22 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function RiderRegistration() {
   const router = useRouter();
   const { company } = useCompany();
+
+  if (!company?.is_approved || !company?.is_active) {
+    return (
+      <div className="flex items-start gap-4 bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <svg className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <p className="font-semibold text-amber-800">Account Pending Approval</p>
+          <p className="text-sm text-amber-700 mt-1">
+            Your account is currently under review by our admin team. Once approved, you'll be able to register riders. This usually takes 24–48 hours.
+          </p>
+        </div>
+      </div>
+    );
+  }
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -61,8 +77,8 @@ export default function RiderRegistration() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size must be less than 5MB");
+    if (file.size > 1 * 1024 * 1024) {
+      setError("Image size must be less than 1MB. Please compress or resize the image before uploading.");
       return;
     }
 
@@ -353,7 +369,7 @@ export default function RiderRegistration() {
                   />
                 </svg>
                 <p className="text-sm text-blue-800">
-                  The rider's <strong>Driver License Number</strong> will be used as their login password for the mobile app.
+                  The rider will set up their own password when they activate their account in the RideX Rider app.
                 </p>
               </div>
             </div>
@@ -575,7 +591,7 @@ export default function RiderRegistration() {
                 riderPhotoFile,
                 riderPhotoPreview,
                 "Upload Rider Photo",
-                "Clear photo of the rider's face (JPG/PNG, max 5MB)"
+                "Clear photo of the rider's face (JPG/PNG, max 1MB)"
               )}
             </div>
 
@@ -588,7 +604,7 @@ export default function RiderRegistration() {
                 vehiclePhotoFile,
                 vehiclePhotoPreview,
                 "Upload Vehicle Photo",
-                "Full view of the vehicle (JPG/PNG, max 5MB)"
+                "Full view of the vehicle (JPG/PNG, max 1MB)"
               )}
             </div>
 
@@ -601,7 +617,7 @@ export default function RiderRegistration() {
                 platePhotoFile,
                 platePhotoPreview,
                 "Upload Plate Number Photo",
-                "Clear photo of the plate number (JPG/PNG, max 5MB)"
+                "Clear photo of the plate number (JPG/PNG, max 1MB)"
               )}
             </div>
           </motion.div>
@@ -636,23 +652,22 @@ export default function RiderRegistration() {
             <p className="text-gray-600 mb-6">
               {formData.name} has been registered as a rider.
               <br />
-              They can now login to the mobile app using their email and
-              password.
+              They can now set up their own account in the RideX Rider app.
             </p>
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6 text-left">
               <h3 className="font-medium text-emerald-900 mb-3">
-                Rider Login Credentials:
+                Next Step for the Rider:
               </h3>
               <div className="space-y-2 text-sm text-emerald-800">
                 <p>
-                  <strong>Email:</strong> {formData.email}
+                  Share their registered email with them:
                 </p>
-                <p>
-                  <strong>Password:</strong> {formData.driver_license_number}
+                <p className="font-mono bg-white border border-emerald-200 rounded px-3 py-2">
+                  {formData.email}
                 </p>
               </div>
               <p className="text-xs text-emerald-600 mt-3">
-                Share these credentials with the rider so they can login to the mobile app.
+                The rider opens the RideX Rider app, taps <strong>"Set up your account"</strong>, enters this email, creates their own password, and verifies their email with a code.
               </p>
             </div>
             <div className="flex gap-3 justify-center">

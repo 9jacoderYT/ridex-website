@@ -19,6 +19,9 @@ import {
   saveCompanyBankInfo,
 } from "@/lib/server-actions/company/companyFinance";
 import { getCompanyReport } from "@/lib/server-actions/company/getCompanyReport";
+import { updateCompanyProfile } from "@/lib/server-actions/company/updateCompanyProfile";
+import { changeCompanyPassword } from "@/lib/server-actions/company/changeCompanyPassword";
+import { getRiderPerformance } from "@/lib/server-actions/company/getRiderPerformance";
 
 // Nigerian banks list (shared with rider app)
 const NIGERIAN_BANKS = [
@@ -765,12 +768,516 @@ function CompanyFinancePanel({ companyId }) {
   );
 }
 
+// ── Rider Detail Modal ────────────────────────────────────────────────────────
+
+function RiderDetailModal({ riderId, riderName, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState("overview");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const res = await getRiderPerformance(riderId);
+      setLoading(false);
+      if (res.success) setData(res);
+    }
+    load();
+  }, [riderId]);
+
+  const fmtCurrency = (n) =>
+    `₦${Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
+  const fmtDate = (d) =>
+    d ? new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+  const STATUS_PILL = {
+    delivered: "bg-green-100 text-green-700",
+    cancelled: "bg-red-100 text-red-700",
+    in_transit: "bg-blue-100 text-blue-700",
+    picked_up: "bg-indigo-100 text-indigo-700",
+    accepted: "bg-amber-100 text-amber-700",
+    pending: "bg-gray-100 text-gray-600",
+  };
+
+  const sections = ["overview", "history", "ratings", "cod"];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            {data?.rider?.rider_photo_url || data?.rider?.profile_picture_url ? (
+              <img
+                src={data.rider.profile_picture_url || data.rider.rider_photo_url}
+                alt={riderName}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <span className="text-emerald-700 font-semibold text-sm">
+                  {riderName?.charAt(0)?.toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{riderName}</h2>
+              <p className="text-xs text-gray-500">Performance Overview</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-sm text-gray-500">Loading performance data…</p>
+            </div>
+          </div>
+        ) : !data ? (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <p className="text-gray-500">Failed to load data.</p>
+          </div>
+        ) : (
+          <>
+            {/* Section tabs */}
+            <div className="border-b border-gray-200 px-6">
+              <nav className="-mb-px flex gap-6">
+                {sections.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setActiveSection(s)}
+                    className={`py-3 text-sm font-medium border-b-2 transition-colors capitalize ${
+                      activeSection === s
+                        ? "border-emerald-500 text-emerald-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {s === "cod" ? "COD" : s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+
+              {/* ── OVERVIEW ── */}
+              {activeSection === "overview" && (
+                <div className="space-y-6">
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Total Orders", value: data.stats.totalOrders, color: "text-gray-900" },
+                      { label: "Delivered", value: data.stats.deliveredOrders, color: "text-green-600" },
+                      { label: "Cancelled", value: data.stats.cancelledOrders, color: "text-red-500" },
+                      { label: "Completion Rate", value: `${data.stats.completionRate}%`, color: "text-emerald-600" },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <p className="text-xs text-gray-500 mb-1">{label}</p>
+                        <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Last 30 Days", value: `${data.stats.last30Days.delivered} delivered` },
+                      { label: "Avg Distance", value: `${data.stats.avgDistance} km` },
+                      { label: "Rating", value: data.rider.average_rating > 0 ? `${Number(data.rider.average_rating).toFixed(1)} ★` : "No ratings" },
+                      { label: "Wallet Balance", value: data.rider.wallet_balance != null ? fmtCurrency(data.rider.wallet_balance) : "—" },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <p className="text-xs text-gray-500 mb-1">{label}</p>
+                        <p className="text-base font-semibold text-gray-900">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rider info */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Rider Details</h4>
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {[
+                        ["Phone", data.rider.phone],
+                        ["Email", data.rider.email],
+                        ["Vehicle", data.rider.vehicle_type === "bike" ? "Motorcycle" : "Car"],
+                        ["Plate No.", data.rider.plate_number || "—"],
+                        ["Status", data.rider.is_active ? "Active" : "Inactive"],
+                        ["Joined", fmtDate(data.rider.created_at)],
+                        ["Total Ratings", data.rider.total_ratings || 0],
+                        ["Commission %", data.rider.commissionPct != null ? `${data.rider.commissionPct}% (rider share of remainder)` : "Default"],
+                      ].map(([dt, dd]) => (
+                        <div key={dt}>
+                          <dt className="text-xs text-gray-500">{dt}</dt>
+                          <dd className="text-sm font-medium text-gray-900 mt-0.5">{dd}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              )}
+
+              {/* ── HISTORY ── */}
+              {activeSection === "history" && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-4">Last {data.recentHistory.length} deliveries</p>
+                  {data.recentHistory.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8">No delivery history yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {data.recentHistory.map((order) => (
+                        <div key={order.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_PILL[order.status] || "bg-gray-100 text-gray-600"}`}>
+                                {order.status.replace("_", " ")}
+                              </span>
+                              {order.delivery_type !== "normal" && (
+                                <span className={`text-xs font-semibold ${order.delivery_type === "priority" ? "text-red-600" : "text-amber-600"}`}>
+                                  {order.delivery_type === "priority" ? "PRIORITY" : "HIGH-VALUE"}
+                                </span>
+                              )}
+                              {order.payment_type === "pay_on_delivery" && (
+                                <span className="text-xs font-semibold text-orange-600">COD</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{fmtDate(order.created_at)}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-semibold text-gray-900">{fmtCurrency(order.amount_paid)}</p>
+                            {order.distance_km && (
+                              <p className="text-xs text-gray-400">{Number(order.distance_km).toFixed(1)} km</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── RATINGS ── */}
+              {activeSection === "ratings" && (
+                <div className="space-y-5">
+                  {/* Rating bar chart */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="text-center">
+                        <p className="text-4xl font-bold text-gray-900">
+                          {data.rider.average_rating > 0 ? Number(data.rider.average_rating).toFixed(1) : "—"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{data.rider.total_ratings || 0} reviews</p>
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        {[5, 4, 3, 2, 1].map((star) => {
+                          const count = data.ratingCounts[star] || 0;
+                          const pct = data.ratingsList.length > 0 ? (count / data.ratingsList.length) * 100 : 0;
+                          return (
+                            <div key={star} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 w-4">{star}★</span>
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-amber-400 h-2 rounded-full transition-all"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-500 w-4 text-right">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual ratings */}
+                  {data.ratingsList.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8">No ratings yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.ratingsList.map((r, i) => (
+                        <div key={i} className="p-3 rounded-xl border border-gray-100">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-amber-500 text-sm">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                            <span className="text-xs text-gray-400">{fmtDate(r.created_at)}</span>
+                          </div>
+                          {r.comment && <p className="text-sm text-gray-700 italic">"{r.comment}"</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── COD ── */}
+              {activeSection === "cod" && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Total Collected", value: fmtCurrency(data.cod.totalCollected) },
+                      { label: "Rider's Share", value: fmtCurrency(data.cod.riderShare) },
+                      { label: "Company Share", value: fmtCurrency(data.cod.companyShare) },
+                      { label: "COD Orders", value: data.cod.totalEntries },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <p className="text-xs text-gray-500 mb-1">{label}</p>
+                        <p className="text-lg font-bold text-gray-900">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {data.cod.totalEntries === 0 && (
+                    <p className="text-center text-gray-400 py-8">No COD deliveries yet.</p>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Company Settings Panel ────────────────────────────────────────────────────
+
+function CompanySettingsPanel({ company, onUpdate }) {
+  const [profileForm, setProfileForm] = useState({
+    company_name: company?.company_name || "",
+    phone: company?.phone || "",
+    company_address: company?.company_address || "",
+  });
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(company?.logo_url || null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null); // { type: 'success'|'error', text }
+
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState(null);
+
+  function handleLogoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleProfileSave(e) {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileMsg(null);
+    const fd = new FormData();
+    fd.append("company_name", profileForm.company_name);
+    fd.append("phone", profileForm.phone);
+    fd.append("company_address", profileForm.company_address);
+    if (logoFile) fd.append("logo", logoFile);
+    const res = await updateCompanyProfile(fd);
+    setProfileSaving(false);
+    if (res.success) {
+      setProfileMsg({ type: "success", text: "Profile updated successfully." });
+      setLogoFile(null);
+      onUpdate(res.company);
+    } else {
+      setProfileMsg({ type: "error", text: res.error || "Update failed." });
+    }
+  }
+
+  async function handlePasswordSave(e) {
+    e.preventDefault();
+    if (pwForm.next !== pwForm.confirm) {
+      setPwMsg({ type: "error", text: "New passwords do not match." });
+      return;
+    }
+    setPwSaving(true);
+    setPwMsg(null);
+    const res = await changeCompanyPassword({ currentPassword: pwForm.current, newPassword: pwForm.next });
+    setPwSaving(false);
+    if (res.success) {
+      setPwMsg({ type: "success", text: "Password changed successfully." });
+      setPwForm({ current: "", next: "", confirm: "" });
+    } else {
+      setPwMsg({ type: "error", text: res.error || "Failed to change password." });
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Company Profile */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Company Profile</h3>
+        <p className="text-sm text-gray-500 mb-6">Update your company name, phone, address, and logo.</p>
+
+        <form onSubmit={handleProfileSave} className="space-y-5">
+          {/* Logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />
+                  </svg>
+                </div>
+              )}
+              <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                {logoFile ? "Change" : "Upload Logo"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </label>
+              {logoFile && (
+                <span className="text-xs text-gray-500 truncate max-w-[160px]">{logoFile.name}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={profileForm.company_name}
+                onChange={e => setProfileForm(f => ({ ...f, company_name: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone <span className="text-red-500">*</span></label>
+              <input
+                type="tel"
+                value={profileForm.phone}
+                onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+            <input
+              type="text"
+              value={profileForm.company_address}
+              onChange={e => setProfileForm(f => ({ ...f, company_address: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
+
+          {profileMsg && (
+            <div className={`text-sm px-4 py-2 rounded-lg ${profileMsg.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {profileMsg.text}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={profileSaving}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
+            >
+              {profileSaving ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Account Info (read-only) */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Account Information</h3>
+        <p className="text-sm text-gray-500 mb-6">These details are set during registration and cannot be changed. Contact support if you need to update them.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { label: "Email Address", value: company?.email },
+            { label: "Business Registration No.", value: company?.business_registration_number || "—" },
+            { label: "NIN Number", value: company?.nin_number || "—" },
+            { label: "Account Status", value: company?.is_active ? "Active" : "Inactive" },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
+              <p className="text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Change Password */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Change Password</h3>
+        <p className="text-sm text-gray-500 mb-6">Use a strong password you don't use elsewhere.</p>
+
+        <form onSubmit={handlePasswordSave} className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+            <input
+              type="password"
+              value={pwForm.current}
+              onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <input
+              type="password"
+              value={pwForm.next}
+              onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              required
+              minLength={6}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <input
+              type="password"
+              value={pwForm.confirm}
+              onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          {pwMsg && (
+            <div className={`text-sm px-4 py-2 rounded-lg ${pwMsg.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {pwMsg.text}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={pwSaving}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
+            >
+              {pwSaving ? "Updating…" : "Update Password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CompanyDashboard() {
-  const { company, logout } = useCompany();
+  const { company, logout, updateCompanyData } = useCompany();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'riders', 'orders', 'support', 'finance'
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'riders', 'orders', 'support', 'finance', 'reports', 'settings'
   const [riders, setRiders] = useState([]);
   const [loadingRiders, setLoadingRiders] = useState(false);
   const [deliveryStats, setDeliveryStats] = useState({
@@ -793,6 +1300,7 @@ export default function CompanyDashboard() {
   });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedRiderDetail, setSelectedRiderDetail] = useState(null); // { id, name }
 
   // Fetch riders and delivery stats when component mounts
   useEffect(() => {
@@ -1250,6 +1758,16 @@ export default function CompanyDashboard() {
               >
                 Reports
               </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === "settings"
+                    ? "border-emerald-500 text-emerald-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Settings
+              </button>
             </nav>
           </div>
         </div>
@@ -1579,14 +2097,20 @@ export default function CompanyDashboard() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
+                              onClick={() => setSelectedRiderDetail({ id: rider.id, name: rider.name })}
+                              className="text-xs font-medium text-emerald-600 hover:text-emerald-800 hover:underline whitespace-nowrap"
+                            >
+                              View Profile
+                            </button>
+                            <button
                               onClick={() => {
                                 setRiderFilter({ id: rider.id, name: rider.name });
                                 setOrderFilter("all");
                                 setActiveTab("orders");
                               }}
-                              className="text-xs font-medium text-emerald-600 hover:text-emerald-800 hover:underline whitespace-nowrap"
+                              className="text-xs font-medium text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
                             >
-                              View Orders
+                              Orders
                             </button>
                             <button
                               onClick={() => {
@@ -1812,6 +2336,20 @@ export default function CompanyDashboard() {
 
         {/* Reports Tab Content */}
         {activeTab === "reports" && <CompanyReportsPanel company={company} />}
+
+        {/* Settings Tab Content */}
+        {activeTab === "settings" && (
+          <CompanySettingsPanel company={company} onUpdate={updateCompanyData} />
+        )}
+
+        {/* Rider Detail Modal */}
+        {selectedRiderDetail && (
+          <RiderDetailModal
+            riderId={selectedRiderDetail.id}
+            riderName={selectedRiderDetail.name}
+            onClose={() => setSelectedRiderDetail(null)}
+          />
+        )}
 
         {/* Order Details Modal */}
         {showOrderModal && selectedOrder && (

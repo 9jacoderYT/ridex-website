@@ -2,10 +2,12 @@
 
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { getSession } from "@/lib/utils/session";
+import { redirect } from "next/navigation";
+import { sendNotificationEmail } from "@/lib/utils/sendNotificationEmail";
 
 async function verifyAdminSession() {
   const session = await getSession();
-  if (!session) throw new Error("Unauthorized");
+  if (!session) redirect("/loginadminusers");
   return session;
 }
 
@@ -49,6 +51,7 @@ export async function getAllRiders({
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -104,6 +107,7 @@ export async function getRiderDetail(riderId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -128,6 +132,7 @@ export async function getRiderOrders(riderId, { page = 1, limit = 20 } = {}) {
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -137,13 +142,20 @@ export async function getRiderOrders(riderId, { page = 1, limit = 20 } = {}) {
 /**
  * Update a rider's status (active/inactive/suspended).
  */
-export async function updateRiderStatus(riderId, status) {
+export async function updateRiderStatus(riderId, status, adminNote = "") {
   try {
     await verifyAdminSession();
 
     if (!["active", "inactive", "suspended"].includes(status)) {
       throw new Error("Invalid status");
     }
+
+    // Fetch rider email + name before updating
+    const { data: rider } = await supabaseAdmin
+      .from("riders")
+      .select("name, email")
+      .eq("id", riderId)
+      .single();
 
     const { error } = await supabaseAdmin
       .from("riders")
@@ -152,8 +164,18 @@ export async function updateRiderStatus(riderId, status) {
 
     if (error) throw error;
 
+    // Notify rider via email (fire-and-forget)
+    if (rider?.email) {
+      sendNotificationEmail("rider_status_change", rider.email, {
+        name: rider.name,
+        newStatus: status,
+        note: adminNote || undefined,
+      });
+    }
+
     return { success: true };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -193,6 +215,7 @@ export async function getRiderStats() {
       stats: { total, active, suspended, inactive, bikes, cars, avgRating },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

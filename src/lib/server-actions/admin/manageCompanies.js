@@ -5,6 +5,8 @@
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { redirect } from "next/navigation";
+import { sendNotificationEmail } from "@/lib/utils/sendNotificationEmail";
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-this-in-production",
@@ -15,21 +17,16 @@ async function verifyAdminSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get("admin-session")?.value;
 
-  if (!token) {
-    throw new Error("Unauthorized");
-  }
+  if (!token) redirect("/loginadminusers");
 
   try {
     const { payload } = await jwtVerify(token, secret);
-    console.log("JWT Payload:", payload); // Debug log to see what fields are available
-
-    // Return payload with fallback for userId
     return {
       ...payload,
-      userId: payload.userId || payload.id || payload.sub, // Try common field names
+      userId: payload.userId || payload.id || payload.sub,
     };
-  } catch (error) {
-    throw new Error("Unauthorized");
+  } catch {
+    redirect("/loginadminusers");
   }
 }
 
@@ -66,6 +63,7 @@ export async function fetchCompanies(filterType = "pending") {
     return { success: true, companies: data };
   } catch (error) {
     console.error("Error in fetchCompanies:", error);
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -139,6 +137,14 @@ export async function approveCompany(companyId) {
 
     console.log("Approved company data:", data); // Debug log
 
+    // Notify company via email (fire-and-forget)
+    if (data?.email) {
+      sendNotificationEmail("company_approved", data.email, {
+        companyName: data.company_name,
+        companyId: data.company_id,
+      });
+    }
+
     return {
       success: true,
       company: data,
@@ -146,11 +152,12 @@ export async function approveCompany(companyId) {
     };
   } catch (error) {
     console.error("Error in approveCompany:", error);
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
 
-export async function deactivateCompany(companyId) {
+export async function deactivateCompany(companyId, adminNote = "") {
   try {
     await verifyAdminSession();
 
@@ -166,6 +173,14 @@ export async function deactivateCompany(companyId) {
       return { success: false, error: "Failed to deactivate company" };
     }
 
+    // Notify company via email (fire-and-forget)
+    if (data?.email) {
+      sendNotificationEmail("company_deactivated", data.email, {
+        companyName: data.company_name,
+        note: adminNote || undefined,
+      });
+    }
+
     return {
       success: true,
       company: data,
@@ -173,6 +188,7 @@ export async function deactivateCompany(companyId) {
     };
   } catch (error) {
     console.error("Error in deactivateCompany:", error);
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -234,6 +250,7 @@ export async function deleteCompany(companyId) {
     return { success: true, message: "Company deleted successfully" };
   } catch (error) {
     console.error("Error in deleteCompany:", error);
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -270,6 +287,7 @@ export async function generateCompanyId() {
     return { success: true, companyId };
   } catch (error) {
     console.error("Error generating company ID:", error);
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

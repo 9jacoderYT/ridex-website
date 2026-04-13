@@ -2,10 +2,11 @@
 
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { getSession } from "@/lib/utils/session";
+import { redirect } from "next/navigation";
 
 async function verifyAdminSession() {
   const session = await getSession();
-  if (!session) throw new Error("Unauthorized");
+  if (!session) redirect("/loginadminusers");
   return session;
 }
 
@@ -62,6 +63,7 @@ export async function getAllOrders({
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -122,6 +124,7 @@ export async function getOrderDetail(orderId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -153,6 +156,7 @@ export async function getFailedOrders({ page = 1, limit = 25, search = "" } = {}
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -179,6 +183,7 @@ export async function getOrderByTracking(trackingNumber) {
 
     return { success: true, data };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -208,6 +213,7 @@ export async function getDeliveredOrders({ page = 1, limit = 25, search = "" } =
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -242,6 +248,7 @@ export async function getOrderStats() {
       stats: { total, pending, active, delivered, cancelled, codOrders },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

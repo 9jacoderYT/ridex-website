@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { registerCompany } from "@/lib/server-actions/company/registerCompany";
+import { sendVerificationCode, verifyEmailCode } from "@/lib/server-actions/company/verifyEmail";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
@@ -13,6 +14,16 @@ export default function CompanyRegistrationPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // Email verification
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [showOtpEntry, setShowOtpEntry] = useState(false);
+  const [regOtp, setRegOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const resendTimerRef = useRef(null);
+
+  useEffect(() => () => clearInterval(resendTimerRef.current), []);
 
   // ID Card
   const [idCardFile, setIdCardFile] = useState(null);
@@ -39,7 +50,70 @@ export default function CompanyRegistrationPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
+    if (name === "email") {
+      setEmailVerified(false);
+      setShowOtpEntry(false);
+      setRegOtp("");
+      setOtpError("");
+    }
   };
+
+  function startResendCooldown() {
+    setResendCooldown(60);
+    resendTimerRef.current = setInterval(() => {
+      setResendCooldown((r) => {
+        if (r <= 1) { clearInterval(resendTimerRef.current); return 0; }
+        return r - 1;
+      });
+    }, 1000);
+  }
+
+  async function handleSendCode() {
+    setIsSubmitting(true);
+    setError("");
+    const res = await sendVerificationCode(formData.email.trim());
+    setIsSubmitting(false);
+    if (res.success) {
+      setShowOtpEntry(true);
+      setOtpError("");
+      startResendCooldown();
+    } else {
+      setError(res.error || "Failed to send verification code.");
+    }
+  }
+
+  async function handleVerifyOtp() {
+    if (regOtp.replace(/\D/g, "").length !== 6) {
+      setOtpError("Please enter all 6 digits.");
+      return;
+    }
+    setIsSubmitting(true);
+    setOtpError("");
+    const res = await verifyEmailCode(formData.email.trim(), regOtp.trim());
+    setIsSubmitting(false);
+    if (res.success) {
+      setEmailVerified(true);
+      setShowOtpEntry(false);
+      setCurrentStep(2);
+      setError("");
+    } else {
+      setOtpError(res.error || "Invalid code.");
+    }
+  }
+
+  async function handleResendCode() {
+    if (resendCooldown > 0) return;
+    setRegOtp("");
+    setOtpError("");
+    setIsSubmitting(true);
+    const res = await sendVerificationCode(formData.email.trim());
+    setIsSubmitting(false);
+    if (res.success) {
+      startResendCooldown();
+    } else {
+      setOtpError(res.error || "Failed to resend code.");
+    }
+  }
 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -172,7 +246,12 @@ export default function CompanyRegistrationPage() {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    if (currentStep === 1) {
+      if (!validateStep(1)) return;
+      await handleSendCode();
+      return;
+    }
     if (validateStep(currentStep)) {
       if (currentStep < 4) {
         setCurrentStep(currentStep + 1);
@@ -182,6 +261,12 @@ export default function CompanyRegistrationPage() {
   };
 
   const prevStep = () => {
+    if (showOtpEntry) {
+      setShowOtpEntry(false);
+      setRegOtp("");
+      setOtpError("");
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       setError("");
@@ -258,7 +343,8 @@ export default function CompanyRegistrationPage() {
                 value={formData.company_name}
                 onChange={handleChange}
                 placeholder="Enter company name"
-                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={showOtpEntry}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:bg-gray-50"
               />
             </div>
 
@@ -272,7 +358,8 @@ export default function CompanyRegistrationPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="company@example.com"
-                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={showOtpEntry}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:bg-gray-50"
               />
             </div>
 
@@ -286,7 +373,8 @@ export default function CompanyRegistrationPage() {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+234 800 000 0000"
-                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={showOtpEntry}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:bg-gray-50"
               />
             </div>
 
@@ -300,7 +388,8 @@ export default function CompanyRegistrationPage() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Minimum 6 characters"
-                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={showOtpEntry}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:bg-gray-50"
               />
             </div>
 
@@ -314,9 +403,48 @@ export default function CompanyRegistrationPage() {
                 value={formData.confirm_password}
                 onChange={handleChange}
                 placeholder="Re-enter password"
-                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={showOtpEntry}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:bg-gray-50"
               />
             </div>
+
+            {showOtpEntry && (
+              <div className="mt-2 p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Verify your email</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    A 6-digit code was sent to{" "}
+                    <span className="font-medium text-gray-700">{formData.email}</span>.
+                    It expires in 15 minutes.
+                  </p>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={regOtp}
+                  onChange={(e) => {
+                    setRegOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    setOtpError("");
+                  }}
+                  placeholder="000000"
+                  className="w-full px-4 py-2.5 text-black text-center text-2xl font-bold border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 tracking-[0.5em]"
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+                {otpError && (
+                  <p className="text-xs text-red-600">{otpError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendCooldown > 0 || isSubmitting}
+                  className="text-sm text-green-600 hover:text-green-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                </button>
+              </div>
+            )}
           </motion.div>
         );
 
@@ -702,7 +830,7 @@ export default function CompanyRegistrationPage() {
 
           {currentStep < 4 && (
             <div className="flex items-center gap-3 mt-6 pt-6 border-t border-gray-200">
-              {currentStep > 1 && (
+              {(currentStep > 1 || showOtpEntry) && (
                 <button
                   onClick={prevStep}
                   disabled={isSubmitting}
@@ -711,12 +839,35 @@ export default function CompanyRegistrationPage() {
                   Back
                 </button>
               )}
-              {currentStep < 3 ? (
+              {currentStep === 1 && showOtpEntry ? (
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={isSubmitting || regOtp.replace(/\D/g, "").length !== 6}
+                  className="flex-1 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify Email"
+                  )}
+                </button>
+              ) : currentStep < 3 ? (
                 <button
                   onClick={nextStep}
-                  className="flex-1 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Continue
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
                 </button>
               ) : (
                 <button

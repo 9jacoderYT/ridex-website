@@ -2,10 +2,11 @@
 
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { getSession } from "@/lib/utils/session";
+import { redirect } from "next/navigation";
 
 async function verifyAdminSession() {
   const session = await getSession();
-  if (!session) throw new Error("Unauthorized");
+  if (!session) redirect("/loginadminusers");
   return session;
 }
 
@@ -40,6 +41,7 @@ export async function getAppUsers({ page = 1, limit = 20, search = "", role = "a
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -81,6 +83,7 @@ export async function getAppUserDetail(userId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -106,6 +109,7 @@ export async function getUserOrderHistory(userId, { page = 1, limit = 15 } = {})
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -129,6 +133,7 @@ export async function getUserRatingsGiven(userId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -151,6 +156,7 @@ export async function getUserBusinessRatings(userId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

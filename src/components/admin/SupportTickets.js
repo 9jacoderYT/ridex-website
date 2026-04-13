@@ -248,8 +248,14 @@ export default function SupportTickets() {
     const amount = parseFloat(creditAmount);
     if (isNaN(amount) || amount <= 0) { alert("Enter a valid amount."); return; }
     setActionLoading(true);
+
+    const isRider = selected.ticket_source === "rider";
+    const isCompany = selected.ticket_source === "company";
+
     const result = await creditUserWallet({
-      userId: selected.user_id,
+      userId: !isRider && !isCompany ? selected.user_id : undefined,
+      riderId: isRider ? selected.rider_id : undefined,
+      companyId: isCompany ? selected.company_id : undefined,
       amount,
       description: creditDesc || `Support resolution for ticket ${selected.ticket_number}`,
       adminUsername: admin?.username,
@@ -257,7 +263,8 @@ export default function SupportTickets() {
       failedPaymentId: selected.failed_payment_id,
     });
     if (result.success) {
-      alert(`Wallet credited ₦${amount.toLocaleString()} and ticket resolved.`);
+      const target = isRider ? "Rider wallet" : isCompany ? "Company wallet" : "Wallet";
+      alert(`${target} credited ₦${amount.toLocaleString()} and ticket resolved.`);
       setSelected(null);
       fetchTickets();
     } else {
@@ -797,15 +804,17 @@ export default function SupportTickets() {
                 </div>
               </details>
 
-              {/* Credit Wallet — only for user tickets */}
-              {selected.user_id && selected.ticket_source !== "rider" && (
+              {/* Credit Wallet — available for user, rider, and company tickets */}
+              {(selected.user_id || selected.rider_id || selected.company_id) && (
                 <details className="group">
                   <summary className="text-xs text-blue-600 font-semibold uppercase cursor-pointer select-none list-none flex items-center gap-1">
                     <span className="group-open:rotate-90 transition-transform inline-block text-blue-400">▶</span>
-                    Credit User Wallet
+                    Credit {selected.ticket_source === "rider" ? "Rider" : selected.ticket_source === "company" ? "Company" : "User"} Wallet
                   </summary>
                   <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
-                    <p className="text-xs text-blue-700">Adds balance to user wallet and auto-resolves this ticket.</p>
+                    <p className="text-xs text-blue-700">
+                      Adds balance to {selected.ticket_source === "rider" ? "rider" : selected.ticket_source === "company" ? "company" : "user"} wallet and auto-resolves this ticket.
+                    </p>
                     <div className="flex gap-2">
                       <input
                         type="number"

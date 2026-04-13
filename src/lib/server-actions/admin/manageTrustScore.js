@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { getSession } from "@/lib/utils/session";
+import { redirect } from "next/navigation";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TrustScore — Admin-only server actions
@@ -10,7 +11,7 @@ import { getSession } from "@/lib/utils/session";
 
 async function verifyAdminSession() {
   const session = await getSession();
-  if (!session) throw new Error("Unauthorized");
+  if (!session) redirect("/loginadminusers");
   return session;
 }
 
@@ -68,6 +69,7 @@ export async function getTrustScore(entityType, entityId) {
 
     return { success: true, scores, log: log ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -101,6 +103,7 @@ export async function setTrustScore(scoreType, entityId, newScore, reason) {
 
     return { success: true, score: clamped };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -138,6 +141,7 @@ export async function recomputeTrustScore(scoreType, entityId) {
 
     return { success: true, score: data };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

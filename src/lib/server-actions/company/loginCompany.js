@@ -27,15 +27,6 @@ export async function loginCompany(formData) {
       return { success: false, error: "Invalid email or password" };
     }
 
-    // Check if account is active
-    if (!company.is_active) {
-      return {
-        success: false,
-        error:
-          "Your account is pending approval. Please wait for admin activation.",
-      };
-    }
-
     // Verify password
     const passwordMatch = await bcrypt.compare(password, company.password_hash);
 

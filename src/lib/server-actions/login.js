@@ -6,51 +6,76 @@ import bcrypt from "bcryptjs";
 
 export async function loginAdmin(formData) {
   try {
-    const username = formData.get("username")?.toString().trim();
+    const email = formData.get("email")?.toString().trim().toLowerCase();
     const password = formData.get("password")?.toString();
 
-    // Validation
-    if (!username || !password) {
-      return {
-        success: false,
-        error: "Username and password are required",
-      };
+    if (!email || !password) {
+      return { success: false, error: "Email and password are required" };
     }
 
-    // Query admin user from database
-    const { data: adminUser, error: dbError } = await supabaseAdmin
-      .from("admin_users")
-      .select("*")
-      .eq("username", username)
-      .eq("is_active", true)
-      .single();
+    // ── Super Admin via env vars (bypasses DB) ──────────────────────────
+    const superEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
+    const superPassword = process.env.SUPER_ADMIN_PASSWORD;
 
-    if (dbError || !adminUser) {
-      return {
-        success: false,
-        error: "Invalid username or password",
-      };
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      adminUser.password_hash,
-    );
-
-    if (!isPasswordValid) {
-      // Log failed login attempt
-      await supabaseAdmin.from("admin_login_history").insert({
-        admin_user_id: adminUser.id,
-        success: false,
-        ip_address: null, // You can get this from headers
-        user_agent: null,
+    if (superEmail && superPassword && email === superEmail && password === superPassword) {
+      await createSession({
+        id: "super-admin-env",
+        username: "superadmin",
+        role_name: "Super Admin",
+        email: superEmail,
+        full_name: "Super Admin",
       });
 
       return {
-        success: false,
-        error: "Invalid username or password",
+        success: true,
+        user: {
+          id: "super-admin-env",
+          username: "superadmin",
+          role: "Super Admin",
+          roleDescription: "Full access to all system modules and settings",
+          email: superEmail,
+          fullName: "Super Admin",
+        },
       };
+    }
+
+    // ── DB-based admin login ────────────────────────────────────────────
+    const { data: adminUser, error: dbError } = await supabaseAdmin
+      .from("admin_users")
+      .select("*")
+      .eq("email", email)
+      .single();
+
+    if (dbError || !adminUser) {
+      return { success: false, error: "Invalid email or password" };
+    }
+
+    // Account checks
+    if (adminUser.is_suspended) {
+      return { success: false, error: "Your account has been suspended. Contact the Super Admin." };
+    }
+
+    if (!adminUser.password_set) {
+      return { success: false, error: "Account setup not completed. Please check your email for the setup link." };
+    }
+
+    if (!adminUser.is_active) {
+      return { success: false, error: "Your account is inactive. Contact the Super Admin." };
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, adminUser.password_hash);
+
+    if (!isPasswordValid) {
+      await supabaseAdmin.from("admin_login_history").insert({
+        admin_user_id: adminUser.id,
+        success: false,
+        failure_reason: "Wrong password",
+        ip_address: null,
+        user_agent: null,
+      });
+
+      return { success: false, error: "Invalid email or password" };
     }
 
     // Update last login time
@@ -83,9 +108,6 @@ export async function loginAdmin(formData) {
     };
   } catch (error) {
     console.error("Login error:", error);
-    return {
-      success: false,
-      error: "An error occurred during login. Please try again.",
-    };
+    return { success: false, error: "An error occurred during login. Please try again." };
   }
 }

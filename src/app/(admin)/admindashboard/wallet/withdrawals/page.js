@@ -155,7 +155,10 @@ function PlatformSettingsPanel() {
   async function save() {
     setSaving(true);
     setMsg("");
-    const res = await updatePlatformSettings(form);
+    const parsed = Object.fromEntries(
+      Object.entries(form).map(([k, v]) => [k, parseFloat(v) || 0])
+    );
+    const res = await updatePlatformSettings(parsed);
     setSaving(false);
     setMsg(res.success ? "Settings saved." : res.error);
   }
@@ -168,7 +171,7 @@ function PlatformSettingsPanel() {
       <input
         type="number"
         value={form[key] ?? ""}
-        onChange={(e) => setForm((f) => ({ ...f, [key]: parseFloat(e.target.value) }))}
+        onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
         className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         {...opts}
       />

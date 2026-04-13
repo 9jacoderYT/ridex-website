@@ -4,6 +4,8 @@
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { redirect } from "next/navigation";
+import { sendNotificationEmail } from "@/lib/utils/sendNotificationEmail";
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-this-in-production",
@@ -12,9 +14,13 @@ const secret = new TextEncoder().encode(
 async function verifyAdminSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get("admin-session")?.value;
-  if (!token) throw new Error("Unauthorized");
-  const { payload } = await jwtVerify(token, secret);
-  return payload;
+  if (!token) redirect("/loginadminusers");
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return payload;
+  } catch {
+    redirect("/loginadminusers");
+  }
 }
 
 async function requireFinanceRole(payload) {
@@ -76,6 +82,7 @@ export async function fetchWithdrawals({ status = "all", type = "all", page = 1,
 
     return { success: true, withdrawals: enriched, total: count };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -114,6 +121,7 @@ export async function approveWithdrawal(withdrawalId, adminNote = "") {
     return { success: true, message: "Withdrawal approved successfully" };
   } catch (err) {
     console.error("approveWithdrawal error:", err);
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -134,17 +142,36 @@ export async function rejectWithdrawal(withdrawalId, adminNote = "") {
 
     if (wrErr || !wr) return { success: false, error: "Withdrawal not found or already processed" };
 
-    // Restore balance
+    // Restore balance and look up email for notification
+    let recipientEmail = null;
+    let recipientName  = null;
+    let restoredBalance = null;
+
     if (wr.requester_type === "rider" && wr.rider_id) {
       await supabaseAdmin.rpc("restore_rider_wallet", {
         p_rider_id: wr.rider_id,
         p_amount: wr.amount,
       });
+      const { data: rider } = await supabaseAdmin
+        .from("riders")
+        .select("name, email, wallet_balance")
+        .eq("id", wr.rider_id)
+        .single();
+      recipientEmail  = rider?.email;
+      recipientName   = rider?.name;
+      restoredBalance = rider ? (Number(rider.wallet_balance ?? 0) + Number(wr.amount)) : null;
     } else if (wr.requester_type === "company" && wr.company_id) {
       await supabaseAdmin.rpc("restore_company_wallet", {
         p_company_id: wr.company_id,
         p_amount: wr.amount,
       });
+      const { data: company } = await supabaseAdmin
+        .from("companies")
+        .select("company_name, email")
+        .eq("id", wr.company_id)
+        .single();
+      recipientEmail = company?.email;
+      recipientName  = company?.company_name;
     }
 
     await supabaseAdmin
@@ -158,8 +185,19 @@ export async function rejectWithdrawal(withdrawalId, adminNote = "") {
       })
       .eq("id", withdrawalId);
 
+    // Notify recipient (fire-and-forget)
+    if (recipientEmail) {
+      sendNotificationEmail("withdrawal_rejected", recipientEmail, {
+        name: recipientName || "there",
+        amount: wr.amount,
+        adminNote: adminNote || undefined,
+        restoredBalance: restoredBalance ?? undefined,
+      });
+    }
+
     return { success: true, message: "Withdrawal rejected and balance restored" };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -216,6 +254,7 @@ export async function checkTransferStatus(withdrawalId) {
 
     return { success: true, status: "processing" };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -229,6 +268,7 @@ export async function getPlatformSettings() {
     if (error) return { success: false, error: error.message };
     return { success: true, settings: data };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -254,6 +294,7 @@ export async function updatePlatformSettings({ platformFeePercentage, minRiderWi
     if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -279,6 +320,7 @@ export async function getWithdrawalStats() {
 
     return { success: true, stats };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }

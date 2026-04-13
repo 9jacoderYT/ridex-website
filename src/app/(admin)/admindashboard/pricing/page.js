@@ -120,6 +120,7 @@ export default function PricingPage() {
     typeMultNormal: 1.0,
     typeMultPriority: 1.35,
     typeMultHighValue: 1.75,
+    typeMultSensitive: 1.5,
     areaDifficultyEnabled: true,
     areaMaxMultiplier: 1.3,
   });
@@ -152,6 +153,7 @@ export default function PricingPage() {
           typeMultNormal: p.type_mult_normal ?? 1.0,
           typeMultPriority: p.type_mult_priority ?? 1.35,
           typeMultHighValue: p.type_mult_high_value ?? 1.75,
+          typeMultSensitive: p.type_mult_sensitive ?? 1.5,
           areaDifficultyEnabled: p.area_difficulty_enabled ?? true,
           areaMaxMultiplier: p.area_max_multiplier ?? 1.3,
         });
@@ -194,6 +196,7 @@ export default function PricingPage() {
       typeMultNormal: Number(form.typeMultNormal),
       typeMultPriority: Number(form.typeMultPriority),
       typeMultHighValue: Number(form.typeMultHighValue),
+      typeMultSensitive: Number(form.typeMultSensitive),
       areaDifficultyEnabled: form.areaDifficultyEnabled,
       areaMaxMultiplier: Number(form.areaMaxMultiplier),
     });
@@ -352,6 +355,7 @@ export default function PricingPage() {
             <MultInput value={form.typeMultNormal} onChange={set("typeMultNormal")} label="Normal delivery" />
             <MultInput value={form.typeMultPriority} onChange={set("typeMultPriority")} label="Priority delivery (same-day)" />
             <MultInput value={form.typeMultHighValue} onChange={set("typeMultHighValue")} label="High-value delivery (insured)" />
+            <MultInput value={form.typeMultSensitive} onChange={set("typeMultSensitive")} label="Sensitive delivery (fragile/special care)" />
             <div className="bg-gray-50 rounded-lg p-3 mt-2">
               <p className="text-[11px] text-gray-500">
                 High-value at <span className="font-medium text-gray-700">×{Number(form.typeMultHighValue).toFixed(2)}</span> means a{" "}

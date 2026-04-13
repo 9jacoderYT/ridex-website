@@ -37,13 +37,11 @@ function useResendCooldown(seconds = 60) {
 
 function OtpInput({ value, onChange, disabled }) {
   const refs = useRef([]);
-  const digits = value.split("");
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
   function handleChange(i, e) {
     const char = e.target.value.replace(/\D/g, "").slice(-1);
     const next = digits.map((d, idx) => (idx === i ? char : d));
-    // pad to 6
-    while (next.length < 6) next.push("");
     onChange(next.join(""));
     if (char && i < 5) refs.current[i + 1]?.focus();
   }

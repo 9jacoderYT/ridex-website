@@ -4,6 +4,7 @@
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { redirect } from "next/navigation";
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-this-in-production",
@@ -12,9 +13,13 @@ const secret = new TextEncoder().encode(
 async function verifyAdminSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get("admin-session")?.value;
-  if (!token) throw new Error("Unauthorized");
-  const { payload } = await jwtVerify(token, secret);
-  return payload;
+  if (!token) redirect("/loginadminusers");
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return payload;
+  } catch {
+    redirect("/loginadminusers");
+  }
 }
 
 // ── Summary totals ─────────────────────────────────────────────────────────────
@@ -58,6 +63,7 @@ export async function getWalletOverview() {
       },
     };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -83,6 +89,7 @@ export async function getRiderWallets({ page = 1, search = "", limit = 20 } = {}
 
     return { success: true, riders: data || [], total: count ?? 0 };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -108,6 +115,7 @@ export async function getCompanyWallets() {
 
     return { success: true, companies: data || [] };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }
@@ -134,6 +142,7 @@ export async function getUserWallets({ page = 1, search = "", limit = 20 } = {})
 
     return { success: true, users: data || [], total: count ?? 0 };
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     return { success: false, error: err.message };
   }
 }

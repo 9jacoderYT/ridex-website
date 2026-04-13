@@ -32,8 +32,6 @@ export async function registerRider(formData) {
     const plate_number = formData.get("plate_number")?.trim().toUpperCase();
     const driver_license_number = formData.get("driver_license_number")?.trim();
 
-    // Use driver license number as password
-    const password = driver_license_number;
     const guarantor_name = formData.get("guarantor_name")?.trim();
     const guarantor_phone = formData.get("guarantor_phone")?.trim();
     const company_id = formData.get("company_id");
@@ -124,10 +122,10 @@ export async function registerRider(formData) {
       };
     }
 
-    // Verify company exists
+    // Verify company exists and is approved
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
-      .select("id, company_name")
+      .select("id, company_name, is_approved, is_active")
       .eq("id", company_id)
       .single();
 
@@ -135,6 +133,13 @@ export async function registerRider(formData) {
       return {
         success: false,
         error: "Invalid company ID. Please check and try again.",
+      };
+    }
+
+    if (!company.is_approved || !company.is_active) {
+      return {
+        success: false,
+        error: "Your account must be approved by an admin before you can register riders.",
       };
     }
 
@@ -286,45 +291,11 @@ export async function registerRider(formData) {
       };
     }
 
-    // STEP 4: Create Supabase auth account for the rider
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        name: name,
-        role: "rider",
-        company_id: company_id,
-      },
-    });
-
-    if (authError) {
-      console.error("Auth user creation error:", authError);
-      // Cleanup uploaded files
-      for (const fileName of uploadedFiles) {
-        await supabaseAdmin.storage.from("rider-documents").remove([fileName]);
-      }
-
-      if (authError.message.includes("already been registered")) {
-        return {
-          success: false,
-          error: "This email is already registered. Please use a different email.",
-        };
-      }
-
-      return {
-        success: false,
-        error: "Failed to create rider account. Please try again.",
-      };
-    }
-
-    const authUserId = authData.user.id;
-
-    // STEP 5: Insert into riders table
+    // STEP 4: Insert into riders table (no auth user created — rider sets up their own account)
     const { data: newRider, error: insertError } = await supabaseAdmin
       .from("riders")
       .insert({
-        auth_user_id: authUserId,
+        auth_user_id: null,
         company_id: company_id,
         name,
         email,
@@ -346,8 +317,7 @@ export async function registerRider(formData) {
     if (insertError) {
       console.error("Database insert error:", insertError);
 
-      // Cleanup: Delete auth user and uploaded files
-      await supabaseAdmin.auth.admin.deleteUser(authUserId);
+      // Cleanup uploaded files
       for (const fileName of uploadedFiles) {
         await supabaseAdmin.storage.from("rider-documents").remove([fileName]);
       }

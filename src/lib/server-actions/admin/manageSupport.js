@@ -2,12 +2,14 @@
 
 import { supabaseAdmin } from "@/lib/supabase-server";
 import { getSession } from "@/lib/utils/session";
+import { redirect } from "next/navigation";
+import { sendNotificationEmail } from "@/lib/utils/sendNotificationEmail";
 
 // ─── Auth helper ────────────────────────────────────────────────────────────
 
 async function verifyAdminSession() {
   const session = await getSession();
-  if (!session) throw new Error("Unauthorized");
+  if (!session) redirect("/loginadminusers");
   return session;
 }
 
@@ -32,6 +34,7 @@ export async function getFailedPayments({ status = "all", page = 1, limit = 20 }
 
     return { success: true, data: data ?? [], total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -54,6 +57,7 @@ export async function updateFailedPaymentStatus(id, { status, notes, resolvedBy 
     if (error) throw error;
     return { success: true };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -113,6 +117,7 @@ export async function getSupportTickets({ status = "all", category = "all", sour
 
     return { success: true, data: tickets, total: count ?? 0 };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -159,6 +164,7 @@ export async function getSupportTicket(id) {
     if (error) throw error;
     return { success: true, data };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -184,6 +190,7 @@ export async function updateSupportTicket(id, { status, adminReply, adminNotes, 
     if (error) throw error;
     return { success: true };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -202,6 +209,7 @@ export async function getTicketMessages(ticketId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -244,6 +252,7 @@ export async function sendAdminMessage(ticketId, adminUsername, message) {
 
     return { success: true };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -265,6 +274,7 @@ export async function getUserPreviousTickets(userId, currentTicketId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -304,6 +314,7 @@ export async function getAppRiderBasicInfo(riderId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -325,6 +336,7 @@ export async function getRiderPreviousTickets(riderId, currentTicketId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -363,6 +375,7 @@ export async function getAppUserBasicInfo(userId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -401,6 +414,7 @@ export async function getCompanyBasicInfo(companyId) {
       },
     };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -422,6 +436,7 @@ export async function getCompanyPreviousTickets(companyId, currentTicketId) {
     if (error) throw error;
     return { success: true, data: data ?? [] };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }
@@ -429,28 +444,93 @@ export async function getCompanyPreviousTickets(companyId, currentTicketId) {
 // ─── Wallet Credit ───────────────────────────────────────────────────────────
 
 /**
- * Manually credit a user's wallet.
- * Looks up the user by their custom user_id (e.g. RXUSR-XXXXXX).
- * Updates wallet_balance and inserts a wallet_transactions audit row.
+ * Manually credit a wallet — works for users, riders, and companies.
+ * Pass exactly one of: userId, riderId, companyId.
+ * For users: updates users.wallet_balance + inserts wallet_transactions audit row.
+ * For riders: updates riders.wallet_balance directly.
+ * For companies: updates company_wallets.balance directly.
  */
-export async function creditUserWallet({ userId, amount, description, adminUsername, ticketId, failedPaymentId }) {
+export async function creditUserWallet({ userId, riderId, companyId, amount, description, adminUsername, ticketId, failedPaymentId }) {
   try {
     await verifyAdminSession();
 
-    if (!userId || !amount || amount <= 0) {
-      throw new Error("Invalid userId or amount");
+    if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+    const reference = ticketId
+      ? `ticket-${ticketId}`
+      : failedPaymentId
+      ? `failpay-${failedPaymentId}`
+      : `admin-${Date.now()}`;
+
+    const auditNote = `Wallet credited ₦${amount.toLocaleString()} by ${adminUsername}. ${description || ""}`.trim();
+
+    // ── Rider credit ──────────────────────────────────────────────────────────
+    if (riderId) {
+      const { data: riderData, error: riderErr } = await supabaseAdmin
+        .from("riders")
+        .select("id, full_name, wallet_balance")
+        .eq("id", riderId)
+        .single();
+
+      if (riderErr || !riderData) throw new Error("Rider not found");
+
+      const newBalance = (riderData.wallet_balance ?? 0) + amount;
+      const { error: updateErr } = await supabaseAdmin
+        .from("riders")
+        .update({ wallet_balance: newBalance })
+        .eq("id", riderId);
+
+      if (updateErr) throw updateErr;
+
+      if (ticketId) {
+        await supabaseAdmin
+          .from("support_tickets")
+          .update({ status: "resolved", admin_notes: auditNote, resolved_by: adminUsername, resolved_at: new Date().toISOString() })
+          .eq("id", ticketId);
+      }
+
+      return { success: true, newBalance };
     }
 
-    // 1. Get current wallet balance
+    // ── Company credit ────────────────────────────────────────────────────────
+    if (companyId) {
+      const { data: walletData, error: walletErr } = await supabaseAdmin
+        .from("company_wallets")
+        .select("balance")
+        .eq("company_id", companyId)
+        .single();
+
+      if (walletErr || !walletData) throw new Error("Company wallet not found");
+
+      const newBalance = (walletData.balance ?? 0) + amount;
+      const { error: updateErr } = await supabaseAdmin
+        .from("company_wallets")
+        .update({ balance: newBalance })
+        .eq("company_id", companyId);
+
+      if (updateErr) throw updateErr;
+
+      if (ticketId) {
+        await supabaseAdmin
+          .from("support_tickets")
+          .update({ status: "resolved", admin_notes: auditNote, resolved_by: adminUsername, resolved_at: new Date().toISOString() })
+          .eq("id", ticketId);
+      }
+
+      return { success: true, newBalance };
+    }
+
+    // ── User credit ───────────────────────────────────────────────────────────
+    if (!userId) throw new Error("No target wallet specified");
+
     const { data: userData, error: userErr } = await supabaseAdmin
       .from("users")
-      .select("user_id, wallet_balance")
+      .select("user_id, full_name, email, wallet_balance")
       .eq("user_id", userId)
       .single();
 
     if (userErr || !userData) throw new Error("User not found");
 
-    // 2. Atomically update wallet balance
     const newBalance = (userData.wallet_balance ?? 0) + amount;
     const { error: updateErr } = await supabaseAdmin
       .from("users")
@@ -459,13 +539,7 @@ export async function creditUserWallet({ userId, amount, description, adminUsern
 
     if (updateErr) throw updateErr;
 
-    // 3. Insert audit record in wallet_transactions
-    const reference = ticketId
-      ? `ticket-${ticketId}`
-      : failedPaymentId
-      ? `failpay-${failedPaymentId}`
-      : `admin-${Date.now()}`;
-
+    // Audit record in wallet_transactions
     const { error: txErr } = await supabaseAdmin
       .from("wallet_transactions")
       .insert({
@@ -479,34 +553,33 @@ export async function creditUserWallet({ userId, amount, description, adminUsern
 
     if (txErr) throw txErr;
 
-    // 4. If a ticket was linked, mark it as resolved
     if (ticketId) {
       await supabaseAdmin
         .from("support_tickets")
-        .update({
-          status: "resolved",
-          admin_notes: `Wallet credited ₦${amount.toLocaleString()} by ${adminUsername}. ${description || ""}`.trim(),
-          resolved_by: adminUsername,
-          resolved_at: new Date().toISOString(),
-        })
+        .update({ status: "resolved", admin_notes: auditNote, resolved_by: adminUsername, resolved_at: new Date().toISOString() })
         .eq("id", ticketId);
     }
 
-    // 5. If a failed_payment was linked, mark it as resolved too
     if (failedPaymentId) {
       await supabaseAdmin
         .from("failed_payments")
-        .update({
-          status: "resolved",
-          notes: `Wallet credited ₦${amount.toLocaleString()} by ${adminUsername}.`,
-          resolved_by: adminUsername,
-          resolved_at: new Date().toISOString(),
-        })
+        .update({ status: "resolved", notes: `Wallet credited ₦${amount.toLocaleString()} by ${adminUsername}.`, resolved_by: adminUsername, resolved_at: new Date().toISOString() })
         .eq("id", failedPaymentId);
+    }
+
+    // Email the user (fire-and-forget)
+    if (userData?.email) {
+      sendNotificationEmail("admin_wallet_credit", userData.email, {
+        name: userData.full_name || "there",
+        amount,
+        description: description || undefined,
+        newBalance,
+      });
     }
 
     return { success: true, newBalance };
   } catch (error) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
     return { success: false, error: error.message };
   }
 }

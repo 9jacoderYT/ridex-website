@@ -66,6 +66,7 @@ const NAV = [
     label: "Companies",
     items: [
       { name: "Companies", path: "/admindashboard/companies", icon: "building", roles: ["Super Admin", "Operations Officer", "Finance Officer"] },
+      { name: "Pending Approvals", path: "/admindashboard/pending-companies", icon: "clock", roles: ["Super Admin", "Operations Officer"] },
     ],
   },
   {
@@ -100,14 +101,8 @@ const NAV = [
   {
     label: "Support",
     items: [
-      { name: "Tickets", path: "/admindashboard/support", icon: "headset", roles: ALL },
+      { name: "Tickets & Disputes", path: "/admindashboard/support", icon: "headset", roles: ALL },
       { name: "Failed Payments", path: "/admindashboard/failed-payments", icon: "creditCard", roles: ALL },
-    ],
-  },
-  {
-    label: "Disputes",
-    items: [
-      { name: "Disputes", path: "/admindashboard/disputes", icon: "alert", roles: ["Super Admin", "Customer Care", "Finance Officer"] },
     ],
   },
   {
