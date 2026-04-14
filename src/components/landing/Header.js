@@ -16,6 +16,7 @@ export default function Header() {
     { name: "Customers", href: "/customers" },
     { name: "Businesses", href: "/businesses" },
     { name: "Companies", href: "/companies" },
+    { name: "Pricing", href: "/pricing" },
     { name: "FAQ", href: "/faq" },
     { name: "Track Order", href: "/track", highlight: true },
   ];
