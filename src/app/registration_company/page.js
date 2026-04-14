@@ -8,6 +8,7 @@ import { registerCompany } from "@/lib/server-actions/company/registerCompany";
 import { sendVerificationCode, verifyEmailCode } from "@/lib/server-actions/company/verifyEmail";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function CompanyRegistrationPage() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function CompanyRegistrationPage() {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [logoBase64, setLogoBase64] = useState("");
+
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -237,6 +240,10 @@ export default function CompanyRegistrationPage() {
         }
         if (!idCardBase64) {
           setError("ID card upload is required");
+          return false;
+        }
+        if (!agreedToTerms) {
+          setError("You must agree to the RIDEX Terms & Conditions to continue");
           return false;
         }
         return true;
@@ -687,6 +694,46 @@ export default function CompanyRegistrationPage() {
                 approved.
               </p>
             </div>
+
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative mt-0.5 flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => {
+                    setAgreedToTerms(e.target.checked);
+                    setError("");
+                  }}
+                  className="sr-only"
+                />
+                <div
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    agreedToTerms
+                      ? "bg-green-600 border-green-600"
+                      : "border-gray-300 bg-white group-hover:border-green-400"
+                  }`}
+                >
+                  {agreedToTerms && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-sm text-gray-700 leading-relaxed">
+                I have read and agree to the{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-600 hover:text-green-700 font-semibold underline underline-offset-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  RIDEX Terms &amp; Conditions
+                </Link>
+                . By completing this registration, I confirm that all information provided is accurate and that my company agrees to operate in accordance with RIDEX platform rules.
+              </span>
+            </label>
           </motion.div>
         );
 
