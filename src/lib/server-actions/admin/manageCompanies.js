@@ -111,11 +111,15 @@ export async function approveCompany(companyId) {
       generatedCompanyId = `RXCOM-${nextNumber.toString().padStart(6, "0")}`;
     }
 
+    // approved_by must be a UUID — env super admin has a non-UUID id so we store null
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const approvedBy = uuidRegex.test(adminData.userId) ? adminData.userId : null;
+
     const updateData = {
       company_id: generatedCompanyId,
       is_active: true,
       is_approved: true,
-      approved_by: adminData.userId, // Admin ID from JWT
+      approved_by: approvedBy,
       approved_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
