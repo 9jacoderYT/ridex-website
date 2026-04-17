@@ -8,6 +8,8 @@ import {
   getAreaScores,
   overrideAreaMultiplier,
   resetAreaMultiplier,
+  getOrderCutoffSettings,
+  updateOrderCutoffSettings,
 } from "@/lib/server-actions/pricing/managePricing";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -128,6 +130,11 @@ export default function PricingPage() {
   const [status, setStatus] = useState(null); // { ok: bool, msg: string }
   const [loading, setLoading] = useState(true);
 
+  // Order cutoff hours
+  const [cutoff, setCutoff] = useState({ enabled: false, hour: 18 });
+  const [savingCutoff, setSavingCutoff] = useState(false);
+  const [cutoffStatus, setCutoffStatus] = useState(null);
+
   // Area scores
   const [areas, setAreas] = useState([]);
   const [areaPage, setAreaPage] = useState(1);
@@ -137,28 +144,33 @@ export default function PricingPage() {
   const [editingArea, setEditingArea] = useState(null); // { latGrid, lngGrid, value }
   const [areaActionStatus, setAreaActionStatus] = useState(null);
 
-  // Load pricing on mount
+  // Load pricing + cutoff settings on mount
   useEffect(() => {
-    getPricingSettings().then((res) => {
-      setLoading(false);
-      if (res.success && res.pricing) {
-        const p = res.pricing;
-        setForm({
-          baseFee: p.base_fee ?? 1000,
-          ratePerKm: p.rate_per_km ?? 300,
-          minDeliveryFee: p.min_delivery_fee ?? 1500,
-          weightMultLight: p.weight_mult_light ?? 1.0,
-          weightMultMedium: p.weight_mult_medium ?? 1.3,
-          weightMultHeavy: p.weight_mult_heavy ?? 1.6,
-          typeMultNormal: p.type_mult_normal ?? 1.0,
-          typeMultPriority: p.type_mult_priority ?? 1.35,
-          typeMultHighValue: p.type_mult_high_value ?? 1.75,
-          typeMultSensitive: p.type_mult_sensitive ?? 1.5,
-          areaDifficultyEnabled: p.area_difficulty_enabled ?? true,
-          areaMaxMultiplier: p.area_max_multiplier ?? 1.3,
-        });
+    Promise.all([getPricingSettings(), getOrderCutoffSettings()]).then(
+      ([pricingRes, cutoffRes]) => {
+        setLoading(false);
+        if (pricingRes.success && pricingRes.pricing) {
+          const p = pricingRes.pricing;
+          setForm({
+            baseFee: p.base_fee ?? 1000,
+            ratePerKm: p.rate_per_km ?? 300,
+            minDeliveryFee: p.min_delivery_fee ?? 1500,
+            weightMultLight: p.weight_mult_light ?? 1.0,
+            weightMultMedium: p.weight_mult_medium ?? 1.3,
+            weightMultHeavy: p.weight_mult_heavy ?? 1.6,
+            typeMultNormal: p.type_mult_normal ?? 1.0,
+            typeMultPriority: p.type_mult_priority ?? 1.35,
+            typeMultHighValue: p.type_mult_high_value ?? 1.75,
+            typeMultSensitive: p.type_mult_sensitive ?? 1.5,
+            areaDifficultyEnabled: p.area_difficulty_enabled ?? true,
+            areaMaxMultiplier: p.area_max_multiplier ?? 1.3,
+          });
+        }
+        if (cutoffRes.success) {
+          setCutoff({ enabled: cutoffRes.cutoffEnabled, hour: cutoffRes.cutoffHour });
+        }
       }
-    });
+    );
   }, []);
 
   const loadAreas = useCallback(async (page = 1) => {
@@ -224,6 +236,36 @@ export default function PricingPage() {
       setAreaActionStatus({ ok: false, msg: res.error });
     }
   }
+
+  async function handleSaveCutoff() {
+    setSavingCutoff(true);
+    setCutoffStatus(null);
+    const res = await updateOrderCutoffSettings({
+      cutoffEnabled: cutoff.enabled,
+      cutoffHour: cutoff.hour,
+    });
+    setSavingCutoff(false);
+    setCutoffStatus(
+      res.success
+        ? { ok: true, msg: "Order hours saved" }
+        : { ok: false, msg: res.error }
+    );
+  }
+
+  // Nigeria time = UTC+1 (WAT, no DST)
+  const nigeriaHour = (new Date().getUTCHours() + 1) % 24;
+  const ordersCurrentlyOpen =
+    !cutoff.enabled || (nigeriaHour >= 6 && nigeriaHour < cutoff.hour);
+
+  const CUTOFF_OPTIONS = [
+    { value: 15, label: "3:00 PM" },
+    { value: 16, label: "4:00 PM" },
+    { value: 17, label: "5:00 PM" },
+    { value: 18, label: "6:00 PM" },
+    { value: 19, label: "7:00 PM" },
+    { value: 20, label: "8:00 PM" },
+    { value: 21, label: "9:00 PM" },
+  ];
 
   const preview = calcPreview(form);
   const AREA_LIMIT = 20;
@@ -442,6 +484,129 @@ export default function PricingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Order Hours */}
+      <SectionCard
+        title="Order Cutoff Hours"
+        subtitle="Pause new order placements after a set time each day. Orders automatically resume at 6:00 AM (Nigeria time)."
+      >
+        <div className="space-y-5">
+          {/* Current status pill */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                  ordersCurrentlyOpen ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Orders are currently{" "}
+                <span
+                  className={
+                    ordersCurrentlyOpen ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  {ordersCurrentlyOpen ? "OPEN" : "CLOSED"}
+                </span>
+              </span>
+              <span className="text-xs text-gray-400">
+                (Nigeria time: {String(nigeriaHour).padStart(2, "0")}:00)
+              </span>
+            </div>
+          </div>
+
+          {/* Enable toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-700 font-medium">
+                Enable daily order cutoff
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                When on, new orders cannot be placed after the selected time
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setCutoff((c) => ({ ...c, enabled: !c.enabled }))
+              }
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                cutoff.enabled ? "bg-blue-600" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  cutoff.enabled ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Cutoff time selector */}
+          <div className={cutoff.enabled ? "" : "opacity-40 pointer-events-none"}>
+            <label className="block text-xs font-medium text-gray-700 mb-2">
+              Stop accepting orders at
+            </label>
+            <div className="grid grid-cols-7 gap-2">
+              {CUTOFF_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setCutoff((c) => ({ ...c, hour: opt.value }))}
+                  className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
+                    cutoff.hour === opt.value
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-400"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800 flex items-start gap-2">
+              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>
+                Orders will be paused at{" "}
+                <strong>
+                  {CUTOFF_OPTIONS.find((o) => o.value === cutoff.hour)?.label}
+                </strong>{" "}
+                and resume at <strong>6:00 AM</strong> the next day. Users will see a message informing them of the cutoff.
+              </span>
+            </div>
+          </div>
+
+          {/* Save */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={handleSaveCutoff}
+              disabled={savingCutoff}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
+            >
+              {savingCutoff ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              Save Order Hours
+            </button>
+
+            {cutoffStatus && (
+              <span
+                className={`text-xs ${
+                  cutoffStatus.ok ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {cutoffStatus.msg}
+              </span>
+            )}
           </div>
         </div>
       </SectionCard>

@@ -161,3 +161,49 @@ export async function resetAreaMultiplier(latGrid, lngGrid) {
     return { success: false, error: err.message };
   }
 }
+
+// ── Order cutoff hours ────────────────────────────────────────────────────────
+
+export async function getOrderCutoffSettings() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("platform_settings")
+      .select("order_cutoff_enabled, order_cutoff_hour")
+      .eq("id", 1)
+      .single();
+    if (error) return { success: false, error: error.message };
+    return {
+      success: true,
+      cutoffEnabled: data.order_cutoff_enabled ?? false,
+      cutoffHour: data.order_cutoff_hour ?? 18,
+    };
+  } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateOrderCutoffSettings({ cutoffEnabled, cutoffHour }) {
+  try {
+    const payload = await verifyAdminSession();
+    await requireSuperAdmin(payload);
+
+    if (cutoffHour < 15 || cutoffHour > 21)
+      return { success: false, error: "Cutoff hour must be between 3 PM and 9 PM" };
+
+    const { error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({
+        order_cutoff_enabled: cutoffEnabled,
+        order_cutoff_hour: cutoffHour,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
+    return { success: false, error: err.message };
+  }
+}

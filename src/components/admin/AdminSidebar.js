@@ -73,6 +73,7 @@ const NAV = [
     label: "Orders",
     items: [
       { name: "Orders", path: "/admindashboard/orders", icon: "package", roles: ["Super Admin", "Customer Care", "Operations Officer"] },
+      { name: "Order Hours", path: "/admindashboard/order-hours", icon: "clock", roles: ["Super Admin"] },
     ],
   },
   {

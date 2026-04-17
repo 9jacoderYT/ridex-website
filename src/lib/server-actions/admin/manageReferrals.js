@@ -48,6 +48,8 @@ export async function getAllReferrals() {
       referred_email: userMap[r.referred_user_id]?.email || "",
       referrer_reward: r.referrer_reward,
       referred_reward: r.referred_reward,
+      referrer_reward_status: r.referrer_reward_status ?? "pending",
+      referrer_reward_paid_at: r.referrer_reward_paid_at ?? null,
       created_at: r.created_at,
     }));
 
@@ -126,20 +128,22 @@ export async function getReferralStats() {
     // All referral records for calculations
     const { data: allReferrals, error: refError } = await supabaseAdmin
       .from("referrals")
-      .select("referrer_reward, referred_reward, created_at, referrer_user_id");
+      .select("referrer_reward, referred_reward, created_at, referrer_user_id, referrer_reward_status");
 
     if (refError) throw refError;
 
-    // Total rewards paid out
-    const totalReferrerRewards = (allReferrals || []).reduce(
-      (sum, r) => sum + (parseFloat(r.referrer_reward) || 0),
-      0,
-    );
+    // Total rewards paid out — referrer reward only counts once their first-order trigger fires
+    const totalReferrerRewards = (allReferrals || [])
+      .filter((r) => r.referrer_reward_status === "paid")
+      .reduce((sum, r) => sum + (parseFloat(r.referrer_reward) || 0), 0);
     const totalReferredRewards = (allReferrals || []).reduce(
       (sum, r) => sum + (parseFloat(r.referred_reward) || 0),
       0,
     );
     const totalRewardsPaid = totalReferrerRewards + totalReferredRewards;
+    const pendingReferrerRewards = (allReferrals || [])
+      .filter((r) => r.referrer_reward_status === "pending")
+      .reduce((sum, r) => sum + (parseFloat(r.referrer_reward) || 0), 0);
 
     // Unique referrers
     const uniqueReferrers = new Set(
@@ -229,6 +233,7 @@ export async function getReferralStats() {
       stats: {
         totalReferrals: totalReferrals || 0,
         totalRewardsPaid,
+        pendingReferrerRewards,
         uniqueReferrers,
         thisMonthReferrals,
         topReferrers,
