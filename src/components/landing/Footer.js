@@ -53,10 +53,9 @@ export default function Footer() {
 
   const resourceLinks = [
     { name: "FAQ", href: "/faq" },
-    { name: "Support", href: "/support" },
     { name: "Terms & Conditions", href: "/terms" },
+    { name: "Privacy Policy", href: "/privacy" },
     { name: "Company Login", href: "/company/login" },
-    { name: "Contact Us", href: "/support" },
   ];
 
   const appLinks = [
@@ -202,7 +201,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} RIDEX. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm text-gray-400">
-              <Link href="/terms" className="hover:text-green-400 transition-colors">
+              <Link href="/privacy" className="hover:text-green-400 transition-colors">
                 Privacy Policy
               </Link>
               <Link href="/terms" className="hover:text-green-400 transition-colors">

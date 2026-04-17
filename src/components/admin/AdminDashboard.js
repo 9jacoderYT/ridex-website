@@ -22,6 +22,16 @@ const ACTIVITY_COLORS = {
   dispute: "bg-red-500",
 };
 
+function getActivityHref(item) {
+  switch (item.type) {
+    case "order":   return `/admindashboard/orders?id=${item.id}`;
+    case "user":    return `/admindashboard/app-users?id=${item.id}`;
+    case "rider":   return `/admindashboard/riders?id=${item.id}`;
+    case "payment": return `/admindashboard/wallet/withdrawals?id=${item.id}`;
+    default:        return null;
+  }
+}
+
 export default function AdminDashboard() {
   const { admin } = useAdmin();
   const router = useRouter();
@@ -193,16 +203,28 @@ export default function AdminDashboard() {
             ) : (data?.activity ?? []).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">No recent activity</p>
             ) : (
-              <div className="space-y-4">
-                {(data?.activity ?? []).map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${ACTIVITY_COLORS[item.type] || "bg-gray-400"}`}></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 leading-snug">{item.action}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{timeAgo(item.time)}</p>
+              <div className="space-y-1">
+                {(data?.activity ?? []).map((item, idx) => {
+                  const href = getActivityHref(item);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => href && router.push(href)}
+                      className={`flex items-start gap-3 px-2 py-2 rounded-lg transition-colors ${href ? "cursor-pointer hover:bg-gray-50 group" : ""}`}
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${ACTIVITY_COLORS[item.type] || "bg-gray-400"}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm leading-snug ${href ? "text-gray-900 group-hover:text-blue-600" : "text-gray-900"}`}>{item.action}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{timeAgo(item.time)}</p>
+                      </div>
+                      {href && (
+                        <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-400 flex-shrink-0 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

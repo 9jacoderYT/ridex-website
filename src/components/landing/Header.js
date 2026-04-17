@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Header() {
   const router = useRouter();
@@ -42,10 +43,8 @@ export default function Header() {
               className="flex items-center gap-2 sm:gap-3 cursor-pointer"
               onClick={() => router.push("/")}
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
-                <span className="text-white font-bold text-lg sm:text-xl">
-                  R
-                </span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden shadow-lg shadow-green-500/30">
+                <Image src="/favicon.jpeg" alt="RideX Logo" width={48} height={48} className="w-full h-full object-cover" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
@@ -166,8 +165,8 @@ export default function Header() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">R</span>
+                    <div className="w-10 h-10 rounded-xl overflow-hidden">
+                      <Image src="/favicon.jpeg" alt="RideX Logo" width={40} height={40} className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xl font-bold text-gray-900">
                       RIDEX

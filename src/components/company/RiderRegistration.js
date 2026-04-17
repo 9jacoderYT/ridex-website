@@ -50,6 +50,7 @@ export default function RiderRegistration() {
     driver_license_number: "",
     guarantor_name: "",
     guarantor_phone: "",
+    guarantor_nin: "",
   });
 
   const handleChange = (e) => {
@@ -152,6 +153,14 @@ export default function RiderRegistration() {
         }
         if (!formData.guarantor_phone.trim()) {
           setError("Guarantor phone number is required");
+          return false;
+        }
+        if (!formData.guarantor_nin.trim()) {
+          setError("Guarantor NIN is required");
+          return false;
+        }
+        if (!/^\d{11}$/.test(formData.guarantor_nin.trim())) {
+          setError("Guarantor NIN must be exactly 11 digits");
           return false;
         }
         return true;
@@ -566,6 +575,22 @@ export default function RiderRegistration() {
                 className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Guarantor NIN <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="guarantor_nin"
+                value={formData.guarantor_nin}
+                onChange={handleChange}
+                placeholder="Enter 11-digit NIN"
+                maxLength={11}
+                className="w-full px-4 py-2.5 text-black border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">National Identification Number — 11 digits</p>
+            </div>
           </motion.div>
         );
 
@@ -683,6 +708,7 @@ export default function RiderRegistration() {
                     driver_license_number: "",
                     guarantor_name: "",
                     guarantor_phone: "",
+                    guarantor_nin: "",
                   });
                   setVehiclePhotoFile(null);
                   setVehiclePhotoPreview("");

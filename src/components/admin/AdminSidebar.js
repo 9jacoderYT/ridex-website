@@ -200,7 +200,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       </nav>
 
       {/* Settings */}
-      <div className="px-2.5 py-2.5 border-t border-gray-100 shrink-0">
+      {/* <div className="px-2.5 py-2.5 border-t border-gray-100 shrink-0">
         <button
           onClick={() => go("/admindashboard/settings")}
           className={`group w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
@@ -214,7 +214,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
           </span>
           <span className="leading-none">Settings</span>
         </button>
-      </div>
+      </div> */}
     </div>
   );
 

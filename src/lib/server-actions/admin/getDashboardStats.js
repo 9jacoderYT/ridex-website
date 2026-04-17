@@ -44,13 +44,13 @@ export async function getDashboardStats() {
       // Riders approved last month
       supabaseAdmin.from("riders").select("*", { count: "exact", head: true }).gte("created_at", startOfLastMonth).lte("created_at", endOfLastMonth),
       // Recent orders for activity feed
-      supabaseAdmin.from("orders").select("order_id, tracking_number, status, created_at").order("created_at", { ascending: false }).limit(5),
+      supabaseAdmin.from("orders").select("id, order_id, tracking_number, status, created_at").order("created_at", { ascending: false }).limit(5),
       // Recent user registrations
-      supabaseAdmin.from("users").select("full_name, created_at").order("created_at", { ascending: false }).limit(3),
+      supabaseAdmin.from("users").select("id, full_name, created_at").order("created_at", { ascending: false }).limit(3),
       // Recent rider approvals
-      supabaseAdmin.from("riders").select("full_name, created_at, is_active").order("created_at", { ascending: false }).limit(3),
+      supabaseAdmin.from("riders").select("id, full_name, created_at, is_active").order("created_at", { ascending: false }).limit(3),
       // Recent withdrawals
-      supabaseAdmin.from("withdrawal_requests").select("amount, status, created_at").order("created_at", { ascending: false }).limit(3),
+      supabaseAdmin.from("withdrawal_requests").select("id, amount, status, created_at").order("created_at", { ascending: false }).limit(3),
     ]);
 
     // Helper: calculate % change
@@ -83,6 +83,7 @@ export async function getDashboardStats() {
         action: `Order ${order.tracking_number || order.order_id} — ${order.status}`,
         time: order.created_at,
         type: "order",
+        id: order.id,
       });
     }
     // Recent user registrations
@@ -91,6 +92,7 @@ export async function getDashboardStats() {
         action: `New user registered${user.full_name ? `: ${user.full_name}` : ""}`,
         time: user.created_at,
         type: "user",
+        id: user.id,
       });
     }
     // Recent rider approvals
@@ -99,6 +101,7 @@ export async function getDashboardStats() {
         action: `Rider onboarded${rider.full_name ? `: ${rider.full_name}` : ""}`,
         time: rider.created_at,
         type: "rider",
+        id: rider.id,
       });
     }
     // Recent withdrawals
@@ -107,6 +110,7 @@ export async function getDashboardStats() {
         action: `Withdrawal ₦${Number(w.amount).toLocaleString()} — ${w.status}`,
         time: w.created_at,
         type: "payment",
+        id: w.id,
       });
     }
 

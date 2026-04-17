@@ -34,6 +34,7 @@ export async function registerRider(formData) {
 
     const guarantor_name = formData.get("guarantor_name")?.trim();
     const guarantor_phone = formData.get("guarantor_phone")?.trim();
+    const guarantor_nin = formData.get("guarantor_nin")?.trim();
     const company_id = formData.get("company_id");
 
     // Get file objects
@@ -70,10 +71,17 @@ export async function registerRider(formData) {
       };
     }
 
-    if (!guarantor_name || !guarantor_phone) {
+    if (!guarantor_name || !guarantor_phone || !guarantor_nin) {
       return {
         success: false,
         error: "Guarantor information is required",
+      };
+    }
+
+    if (!/^\d{11}$/.test(guarantor_nin)) {
+      return {
+        success: false,
+        error: "Guarantor NIN must be exactly 11 digits",
       };
     }
 
@@ -305,6 +313,7 @@ export async function registerRider(formData) {
         driver_license_number,
         guarantor_name,
         guarantor_phone,
+        guarantor_nin,
         vehicle_photo_url,
         rider_photo_url,
         plate_photo_url,

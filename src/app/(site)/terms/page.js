@@ -186,7 +186,7 @@ Data Retention:
 
 RIDEX will not sell your personal data to third parties. Data may be shared with trusted service providers (payment processors, hosting, analytics) necessary to operate the platform.
 
-For full details, please read our Privacy Policy.`,
+For full details, please read our Privacy Policy at ridex.app/privacy.`,
   },
   {
     id: "account-deletion",
@@ -328,12 +328,12 @@ export default function TermsPage() {
               <div className="mt-12 p-6 bg-green-50 border border-green-200 rounded-2xl text-center">
                 <p className="text-gray-700 font-semibold mb-2">Questions about these Terms?</p>
                 <p className="text-sm text-gray-500 mb-4">Our support team is here to help.</p>
-                <Link
-                  href="/support"
+                <a
+                  href="mailto:support@ridex.app"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full transition-colors text-sm"
                 >
-                  Contact Support
-                </Link>
+                  Email Support
+                </a>
               </div>
             </div>
           </div>

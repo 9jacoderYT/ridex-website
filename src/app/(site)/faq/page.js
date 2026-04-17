@@ -50,7 +50,7 @@ const categories = [
       {
         question: "How do I set up a business account?",
         answer:
-          "Contact our sales team or sign up through the business portal. We'll set up your account with custom pricing, a dedicated dashboard, and API access based on your delivery volume.",
+          "Setting up a business account is just like creating a regular customer account — download the RideX app, sign up, and you're ready to start sending deliveries right away. No special onboarding or approvals required.",
       },
       {
         question: "Can I send bulk orders?",
@@ -60,7 +60,7 @@ const categories = [
       {
         question: "Do you offer volume discounts?",
         answer:
-          "Yes. We offer tiered pricing based on monthly delivery volume. The more you ship, the less you pay per delivery. Contact our sales team for a custom quote.",
+          "Yes. The app provides promotions and volume discounts automatically. The more you ship, the better the deals available to you — no need to negotiate or contact anyone.",
       },
       {
         question: "Can I integrate RideX with my e-commerce platform?",
