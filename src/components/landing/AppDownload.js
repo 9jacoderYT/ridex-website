@@ -221,7 +221,7 @@ export default function AppDownload() {
             <motion.a
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              href="#register"
+              href="/company/login"
               className="inline-flex items-center gap-2 px-8 py-4 bg-white text-green-600 font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
             >
               <span>Access Dashboard</span>

@@ -47,13 +47,29 @@ export async function getRiderPerformance(riderDbId) {
       return { success: false, error: "Rider not found or access denied" };
     }
 
-    // Commission % — lives in company_commission_settings, not on riders
-    const { data: commissionRow } = await supabaseAdmin
-      .from("company_commission_settings")
-      .select("rider_percentage")
-      .eq("company_id", companyId)
-      .single();
-    const commissionPct = commissionRow?.rider_percentage ?? null;
+    // Resolve effective commission: per-rider override → company default → null
+    const [overrideRes, companyCommRes] = await Promise.all([
+      supabaseAdmin
+        .from("rider_commission_overrides")
+        .select("rider_percentage")
+        .eq("rider_id", riderDbId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("company_commission_settings")
+        .select("rider_percentage")
+        .eq("company_id", companyId)
+        .maybeSingle(),
+    ]);
+
+    const hasOverride = !!overrideRes.data;
+    const commissionPct = hasOverride
+      ? parseFloat(overrideRes.data.rider_percentage)
+      : companyCommRes.data?.rider_percentage != null
+      ? parseFloat(companyCommRes.data.rider_percentage)
+      : null;
+    const companyDefaultPct = companyCommRes.data?.rider_percentage != null
+      ? parseFloat(companyCommRes.data.rider_percentage)
+      : null;
 
     // Order stats — all orders for this rider
     const thirtyDaysAgo = new Date();
@@ -105,7 +121,7 @@ export async function getRiderPerformance(riderDbId) {
 
     return {
       success: true,
-      rider: { ...rider, commissionPct },
+      rider: { ...rider, commissionPct, hasCommissionOverride: hasOverride, companyDefaultPct },
       stats: {
         totalOrders: orders.length,
         deliveredOrders: deliveredOrders.length,

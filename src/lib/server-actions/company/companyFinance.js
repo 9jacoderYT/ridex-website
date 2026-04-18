@@ -95,6 +95,63 @@ export async function updateCompanyCommission(riderPercentage) {
   }
 }
 
+// ── Per-rider commission override ────────────────────────────────────────────
+
+// Set (or update) a custom commission split for one specific rider.
+export async function setRiderCommission(riderDbId, riderPercentage) {
+  try {
+    const session = await validateCompanySession();
+    if (!session.success) return { success: false, error: session.error };
+    const companyId = session.company.id;
+
+    if (riderPercentage < 50 || riderPercentage > 100)
+      return { success: false, error: "Rider percentage must be between 50% and 100%" };
+
+    // Verify the rider belongs to this company
+    const { data: rider, error: riderErr } = await supabaseAdmin
+      .from("riders")
+      .select("id")
+      .eq("id", riderDbId)
+      .eq("company_id", companyId)
+      .single();
+
+    if (riderErr || !rider)
+      return { success: false, error: "Rider not found or does not belong to your company" };
+
+    const { error } = await supabaseAdmin
+      .from("rider_commission_overrides")
+      .upsert(
+        { rider_id: riderDbId, company_id: companyId, rider_percentage: riderPercentage, updated_at: new Date().toISOString() },
+        { onConflict: "rider_id" }
+      );
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// Remove the custom override for a rider — they revert to the company default.
+export async function removeRiderCommission(riderDbId) {
+  try {
+    const session = await validateCompanySession();
+    if (!session.success) return { success: false, error: session.error };
+    const companyId = session.company.id;
+
+    const { error } = await supabaseAdmin
+      .from("rider_commission_overrides")
+      .delete()
+      .eq("rider_id", riderDbId)
+      .eq("company_id", companyId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 // ── Get company withdrawal history ────────────────────────────────────────────
 
 export async function getCompanyWithdrawals() {

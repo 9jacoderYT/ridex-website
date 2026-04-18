@@ -41,7 +41,7 @@ const solutions = [
     ),
     title: "Live Tracking",
     desc: "Know exactly where your package is at all times.",
-    color: "bg-blue-500",
+    color: "bg-emerald-600",
   },
   {
     icon: (
@@ -51,7 +51,7 @@ const solutions = [
     ),
     title: "Reliable System",
     desc: "No stories. No excuses. Just delivery.",
-    color: "bg-purple-500",
+    color: "bg-green-700",
   },
   {
     icon: (
@@ -61,7 +61,7 @@ const solutions = [
     ),
     title: "Smart Payments",
     desc: "Pay securely — before or at delivery — all tracked inside RIDEX.",
-    color: "bg-orange-500",
+    color: "bg-green-600",
   },
 ];
 
@@ -76,7 +76,7 @@ export default function ProblemSolution() {
   return (
     <>
       {/* ── PROBLEM SECTION ── */}
-      <section className="py-16 sm:py-24 bg-gray-900 text-white overflow-hidden">
+      <section className="py-16 sm:py-24 bg-gray-50 overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection>
             {(isInView) => (
@@ -86,15 +86,15 @@ export default function ProblemSolution() {
                   animate={isInView ? { y: 0, opacity: 1 } : {}}
                   transition={{ duration: 0.6 }}
                 >
-                  <span className="inline-block px-4 py-1.5 bg-red-500/20 border border-red-500/40 text-red-400 text-sm font-semibold rounded-full mb-6">
+                  <span className="inline-block px-4 py-1.5 bg-red-50 border border-red-200 text-red-600 text-sm font-semibold rounded-full mb-6">
                     The Real Problem
                   </span>
-                  <h2 className="text-4xl sm:text-5xl font-bold mb-4 leading-tight">
+                  <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
                     The Problem Isn&apos;t Delivery…
                     <br />
-                    <span className="text-red-400">It&apos;s Delay.</span>
+                    <span className="text-red-500">It&apos;s Delay.</span>
                   </h2>
-                  <p className="text-gray-400 text-lg mb-12 max-w-2xl mx-auto">
+                  <p className="text-gray-500 text-lg mb-12 max-w-2xl mx-auto">
                     Every business that relies on delivery knows the pain. And every delay costs you something.
                   </p>
                 </motion.div>
@@ -106,10 +106,10 @@ export default function ProblemSolution() {
                       initial={{ y: 40, opacity: 0 }}
                       animate={isInView ? { y: 0, opacity: 1 } : {}}
                       transition={{ delay: i * 0.1 + 0.2, duration: 0.5 }}
-                      className="bg-gray-800/60 border border-gray-700 rounded-2xl p-6 text-center"
+                      className="bg-white border border-gray-200 rounded-2xl p-6 text-center shadow-sm"
                     >
                       <div className="text-3xl mb-3">{p.icon}</div>
-                      <p className="text-gray-300 text-sm font-medium">{p.text}</p>
+                      <p className="text-gray-600 text-sm font-medium">{p.text}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -118,10 +118,10 @@ export default function ProblemSolution() {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={isInView ? { scale: 1, opacity: 1 } : {}}
                   transition={{ delay: 0.6, duration: 0.5 }}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-green-500/20 border border-green-500/40 rounded-2xl"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-green-50 border border-green-200 rounded-2xl"
                 >
                   <span className="text-2xl">✅</span>
-                  <p className="text-xl font-bold text-green-400">RIDEX fixes that.</p>
+                  <p className="text-xl font-bold text-green-700">RIDEX fixes that.</p>
                 </motion.div>
               </div>
             )}
@@ -218,42 +218,6 @@ export default function ProblemSolution() {
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── LOCAL SEO SECTION ── */}
-      <section className="py-12 sm:py-16 bg-gray-50 border-y border-gray-200">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            {(isInView) => (
-              <div className="max-w-3xl mx-auto text-center">
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={isInView ? { y: 0, opacity: 1 } : {}}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <span className="text-2xl">📍</span>
-                    <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Ilorin, Nigeria</span>
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                    Delivery in Ilorin — Done Right
-                  </h2>
-                  <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                    Looking for a dispatch rider in Ilorin? Need a fast delivery service? Want to send a package across Ilorin today?
-                    RIDEX is the reliable delivery platform for same-day delivery and real-time tracking in Ilorin.
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {["Dispatch Rider Ilorin", "Same-Day Delivery", "Real-Time Tracking", "Fast & Reliable"].map((tag) => (
-                      <span key={tag} className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 font-medium shadow-sm">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </motion.div>
               </div>
             )}
           </AnimatedSection>

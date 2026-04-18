@@ -13,6 +13,8 @@ import {
   getCompanyWallet,
   getCompanyCommission,
   updateCompanyCommission,
+  setRiderCommission,
+  removeRiderCommission,
   getCompanyWithdrawals,
   requestCompanyWithdrawal,
   getCompanyBankInfo,
@@ -775,15 +777,62 @@ function RiderDetailModal({ riderId, riderName, onClose }) {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("overview");
 
+  // Per-rider commission editing
+  const [editingCommission, setEditingCommission] = useState(false);
+  const [commissionInput, setCommissionInput] = useState("");
+  const [savingCommission, setSavingCommission] = useState(false);
+  const [commissionStatus, setCommissionStatus] = useState(null); // { ok, msg }
+
+  async function reload() {
+    const res = await getRiderPerformance(riderId);
+    if (res.success) setData(res);
+  }
+
   useEffect(() => {
     async function load() {
       setLoading(true);
       const res = await getRiderPerformance(riderId);
       setLoading(false);
-      if (res.success) setData(res);
+      if (res.success) {
+        setData(res);
+        setCommissionInput(String(res.rider?.commissionPct ?? ""));
+      }
     }
     load();
   }, [riderId]);
+
+  async function handleSaveCommission() {
+    const pct = parseFloat(commissionInput);
+    if (isNaN(pct) || pct < 50 || pct > 100) {
+      setCommissionStatus({ ok: false, msg: "Enter a value between 50 and 100" });
+      return;
+    }
+    setSavingCommission(true);
+    setCommissionStatus(null);
+    const res = await setRiderCommission(riderId, pct);
+    setSavingCommission(false);
+    if (res.success) {
+      setCommissionStatus({ ok: true, msg: "Commission saved" });
+      setEditingCommission(false);
+      await reload();
+    } else {
+      setCommissionStatus({ ok: false, msg: res.error });
+    }
+  }
+
+  async function handleResetCommission() {
+    setSavingCommission(true);
+    setCommissionStatus(null);
+    const res = await removeRiderCommission(riderId);
+    setSavingCommission(false);
+    if (res.success) {
+      setCommissionStatus({ ok: true, msg: "Reset to company default" });
+      setEditingCommission(false);
+      await reload();
+    } else {
+      setCommissionStatus({ ok: false, msg: res.error });
+    }
+  }
 
   const fmtCurrency = (n) =>
     `₦${Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
@@ -913,7 +962,6 @@ function RiderDetailModal({ riderId, riderName, onClose }) {
                         ["Status", data.rider.is_active ? "Active" : "Inactive"],
                         ["Joined", fmtDate(data.rider.created_at)],
                         ["Total Ratings", data.rider.total_ratings || 0],
-                        ["Commission %", data.rider.commissionPct != null ? `${data.rider.commissionPct}% (rider share of remainder)` : "Default"],
                       ].map(([dt, dd]) => (
                         <div key={dt}>
                           <dt className="text-xs text-gray-500">{dt}</dt>
@@ -921,6 +969,106 @@ function RiderDetailModal({ riderId, riderName, onClose }) {
                         </div>
                       ))}
                     </dl>
+                  </div>
+
+                  {/* Per-rider commission card */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-gray-700">Commission Split</h4>
+                      {!editingCommission && (
+                        <button
+                          onClick={() => { setEditingCommission(true); setCommissionStatus(null); setCommissionInput(String(data.rider.commissionPct ?? data.rider.companyDefaultPct ?? "")); }}
+                          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Current state */}
+                    {!editingCommission && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${data.rider.hasCommissionOverride ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+                            {data.rider.hasCommissionOverride ? "Custom" : "Default"}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {data.rider.commissionPct != null ? `${data.rider.commissionPct}%` : "—"} rider share of remainder
+                          </span>
+                        </div>
+                        {data.rider.hasCommissionOverride && (
+                          <p className="text-xs text-gray-400">
+                            Company default: {data.rider.companyDefaultPct != null ? `${data.rider.companyDefaultPct}%` : "—"}
+                            {" · "}
+                            <button
+                              onClick={handleResetCommission}
+                              disabled={savingCommission}
+                              className="text-red-500 hover:text-red-600 underline"
+                            >
+                              Reset to default
+                            </button>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Edit form */}
+                    {editingCommission && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Rider's share of post-platform remainder (50–100%)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={50}
+                              max={100}
+                              step={1}
+                              value={commissionInput}
+                              onChange={(e) => setCommissionInput(e.target.value)}
+                              className="w-24 border-2 border-gray-900 rounded-lg px-3 py-1.5 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700"
+                            />
+                            <span className="text-sm text-gray-500">%</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Company default is {data.rider.companyDefaultPct != null ? `${data.rider.companyDefaultPct}%` : "—"}. Leave blank to revert.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleSaveCommission}
+                            disabled={savingCommission}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+                          >
+                            {savingCommission ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+                            Save
+                          </button>
+                          <button
+                            onClick={() => { setEditingCommission(false); setCommissionStatus(null); }}
+                            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg"
+                          >
+                            Cancel
+                          </button>
+                          {data.rider.hasCommissionOverride && (
+                            <button
+                              onClick={handleResetCommission}
+                              disabled={savingCommission}
+                              className="px-3 py-1.5 text-xs text-red-500 hover:text-red-600 border border-red-200 rounded-lg"
+                            >
+                              Reset to default
+                            </button>
+                          )}
+                        </div>
+
+                        {commissionStatus && (
+                          <p className={`text-xs ${commissionStatus.ok ? "text-emerald-600" : "text-red-500"}`}>
+                            {commissionStatus.msg}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

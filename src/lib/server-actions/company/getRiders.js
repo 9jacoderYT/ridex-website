@@ -39,7 +39,6 @@ export async function getRiders(companyId) {
       .order("created_at", { ascending: false });
 
     if (error?.code === "42703") {
-      // Column doesn't exist yet — retry without rating fields
       const fallback = await supabaseAdmin
         .from("riders")
         .select(BASE_FIELDS)
@@ -57,9 +56,44 @@ export async function getRiders(companyId) {
       return { success: false, error: "Failed to fetch riders" };
     }
 
+    const riderList = riders || [];
+
+    // Fetch per-rider commission overrides for this company in one query
+    const riderIds = riderList.map((r) => r.id);
+    let overrideMap = {};
+    if (riderIds.length > 0) {
+      const { data: overrides } = await supabaseAdmin
+        .from("rider_commission_overrides")
+        .select("rider_id, rider_percentage")
+        .in("rider_id", riderIds);
+
+      if (overrides) {
+        overrideMap = Object.fromEntries(
+          overrides.map((o) => [o.rider_id, parseFloat(o.rider_percentage)])
+        );
+      }
+    }
+
+    // Fetch company-wide default
+    const { data: companyComm } = await supabaseAdmin
+      .from("company_commission_settings")
+      .select("rider_percentage")
+      .eq("company_id", companyId)
+      .maybeSingle();
+    const companyDefaultPct = companyComm?.rider_percentage != null
+      ? parseFloat(companyComm.rider_percentage)
+      : 75;
+
+    const enrichedRiders = riderList.map((r) => ({
+      ...r,
+      hasCommissionOverride: r.id in overrideMap,
+      commissionPct: r.id in overrideMap ? overrideMap[r.id] : companyDefaultPct,
+      companyDefaultPct,
+    }));
+
     return {
       success: true,
-      riders: riders || [],
+      riders: enrichedRiders,
     };
   } catch (error) {
     console.error("Error in getRiders:", error);
