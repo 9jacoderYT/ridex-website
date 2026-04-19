@@ -167,7 +167,7 @@ function CompanyReportsPanel({ company }) {
         <p className="text-sm text-gray-500 mb-5">
           Select a date range to generate a summary of your delivery performance.
         </p>
-        <div className="flex flex-wrap gap-6 items-end">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6 items-start sm:items-end">
           {/* Start month */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">From</label>
@@ -259,14 +259,14 @@ function CompanyReportsPanel({ company }) {
       {reportData && (
         <>
           {/* Period header + export buttons */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                 {formatReportPeriodLabel(reportData.period)}
               </h2>
               <p className="text-sm text-gray-500 mt-0.5">Delivery report for your company</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => handleExportPdf("summary")}
                 disabled={exporting}
@@ -398,7 +398,7 @@ function CompanyReportsPanel({ company }) {
           {/* Withdrawal Summary */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h3 className="text-base font-bold text-gray-900 mb-4">Withdrawal Summary</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-500 mb-1">Total Requested</p>
                 <p className="text-xl font-bold text-gray-900">{fmt(reportData.withdrawals.requested)}</p>
@@ -608,7 +608,7 @@ function CompanyFinancePanel({ companyId }) {
           {withdrawals.length === 0 ? (
             <p className="text-sm text-gray-400 p-6 text-center">No withdrawals yet</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="bg-gray-50"><tr>
                 {["Date", "Amount", "Bank", "Account", "Status"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
@@ -629,7 +629,7 @@ function CompanyFinancePanel({ companyId }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}
@@ -749,9 +749,9 @@ function CompanyFinancePanel({ companyId }) {
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rider % of post-platform amount <span className="text-gray-400 font-normal">(50–100%)</span>
+              Rider % of post-platform amount <span className="text-gray-400 font-normal">(0–100%)</span>
             </label>
-            <input type="number" min="50" max="100" step="5" value={riderPct}
+            <input type="number" min="0" max="100" step="5" value={riderPct}
               onChange={(e) => setRiderPct(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             <p className="text-xs text-gray-400 mt-1">
@@ -803,8 +803,8 @@ function RiderDetailModal({ riderId, riderName, onClose }) {
 
   async function handleSaveCommission() {
     const pct = parseFloat(commissionInput);
-    if (isNaN(pct) || pct < 50 || pct > 100) {
-      setCommissionStatus({ ok: false, msg: "Enter a value between 50 and 100" });
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      setCommissionStatus({ ok: false, msg: "Enter a value between 0 and 100" });
       return;
     }
     setSavingCommission(true);
@@ -1017,12 +1017,12 @@ function RiderDetailModal({ riderId, riderName, onClose }) {
                       <div className="space-y-3">
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">
-                            Rider's share of post-platform remainder (50–100%)
+                            Rider's share of post-platform remainder (0–100%)
                           </label>
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              min={50}
+                              min={0}
                               max={100}
                               step={1}
                               value={commissionInput}
@@ -1638,10 +1638,10 @@ export default function CompanyDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50/30">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 backdrop-blur-sm bg-white/90">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -1656,11 +1656,11 @@ export default function CompanyDashboard() {
                   />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">
                   {company?.company_name}
                 </h1>
-                <p className="text-xs text-gray-500">Business Dashboard</p>
+                <p className="text-xs text-gray-500 hidden sm:block">Business Dashboard</p>
               </div>
             </div>
 
@@ -1705,8 +1705,8 @@ export default function CompanyDashboard() {
       {/* Pending Approval Banner */}
       {(!company?.is_approved || !company?.is_active) && (
         <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center gap-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1732,19 +1732,19 @@ export default function CompanyDashboard() {
       )}
 
       {/* Main Content */}
-      <div className={`max-w-7xl mx-auto px-6 py-8 ${(!company?.is_approved || !company?.is_active) ? "pointer-events-none opacity-50 select-none" : ""}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 ${(!company?.is_approved || !company?.is_active) ? "pointer-events-none opacity-50 select-none" : ""}`}>
         {/* Welcome Section with Account Status */}
         <div className="mb-8">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
                 Welcome back! 👋
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 Here's what's happening with your deliveries today
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start">
               <span
                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
                   company?.is_active
@@ -1764,7 +1764,7 @@ export default function CompanyDashboard() {
         </div>
 
         {/* Company ID Info Card */}
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 mb-8 text-white shadow-lg">
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 text-white shadow-lg">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -1783,8 +1783,8 @@ export default function CompanyDashboard() {
                 </svg>
                 <h3 className="text-lg font-bold">Your Company ID</h3>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-3 inline-block mb-3">
-                <p className="text-3xl font-mono font-bold tracking-wider">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4 sm:py-3 inline-block mb-3">
+                <p className="text-lg sm:text-3xl font-mono font-bold tracking-wider break-all">
                   {company?.company_id || "Pending Assignment"}
                 </p>
               </div>
@@ -1835,10 +1835,10 @@ export default function CompanyDashboard() {
         {/* Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 space-x-4 sm:space-x-8">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === "overview"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -1848,13 +1848,13 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("riders")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
                   activeTab === "riders"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Registered Riders
+                Riders
                 {riders.length > 0 && (
                   <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
                     {riders.length}
@@ -1863,7 +1863,7 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("orders")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
                   activeTab === "orders"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -1878,7 +1878,7 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("support")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === "support"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -1888,7 +1888,7 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("finance")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === "finance"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -1898,7 +1898,7 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("reports")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === "reports"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -1908,7 +1908,7 @@ export default function CompanyDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab("settings")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === "settings"
                     ? "border-emerald-500 text-emerald-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -2015,9 +2015,9 @@ export default function CompanyDashboard() {
         {/* Riders Tab Content */}
         {activeTab === "riders" && (
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+            <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   Registered Riders
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
@@ -2026,7 +2026,7 @@ export default function CompanyDashboard() {
               </div>
               <button
                 onClick={() => router.push("/company/register-rider")}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors text-sm flex-shrink-0"
               >
                 <svg
                   className="w-4 h-4"
@@ -2330,8 +2330,8 @@ export default function CompanyDashboard() {
 
             {/* Orders Table */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900">
                   {riderFilter ? `Orders — ${riderFilter.name}` : "Company Orders"}
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">

@@ -104,6 +104,7 @@ export async function loginAdmin(formData) {
         roleDescription: adminUser.role_description,
         email: adminUser.email,
         fullName: adminUser.full_name,
+        avatarStyle: adminUser.avatar_style || "blue",
       },
     };
   } catch (error) {

@@ -23,14 +23,8 @@ async function verifyAdminSession() {
 }
 
 async function requireSuperAdmin(payload) {
-  const { data: admin } = await supabaseAdmin
-    .from("admin_users")
-    .select("role_name")
-    .eq("username", payload.username)
-    .single();
-  if (admin?.role_name !== "Super Admin")
-    throw new Error("Only Super Admin can change pricing settings");
-  return admin;
+  if (payload.role !== "Super Admin")
+    throw new Error("Only Super Admin can change these settings");
 }
 
 // ── Get full pricing config ────────────────────────────────────────────────────

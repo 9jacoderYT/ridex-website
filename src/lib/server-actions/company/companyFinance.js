@@ -77,8 +77,8 @@ export async function updateCompanyCommission(riderPercentage) {
     if (!session.success) return { success: false, error: session.error };
     const companyId = session.company.id;
 
-    if (riderPercentage < 50 || riderPercentage > 100) {
-      return { success: false, error: "Rider percentage must be between 50% and 100%" };
+    if (riderPercentage < 0 || riderPercentage > 100) {
+      return { success: false, error: "Rider percentage must be between 0% and 100%" };
     }
 
     const { error } = await supabaseAdmin
@@ -104,8 +104,8 @@ export async function setRiderCommission(riderDbId, riderPercentage) {
     if (!session.success) return { success: false, error: session.error };
     const companyId = session.company.id;
 
-    if (riderPercentage < 50 || riderPercentage > 100)
-      return { success: false, error: "Rider percentage must be between 50% and 100%" };
+    if (riderPercentage < 0 || riderPercentage > 100)
+      return { success: false, error: "Rider percentage must be between 0% and 100%" };
 
     // Verify the rider belongs to this company
     const { data: rider, error: riderErr } = await supabaseAdmin
