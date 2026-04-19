@@ -727,7 +727,7 @@ export default function AllRiders({ presetStatus = "all", presetVehicle = "all" 
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="p-6 max-w-7xl">
+    <div className="p-4 sm:p-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">All Riders</h1>
@@ -757,7 +757,7 @@ export default function AllRiders({ presetStatus = "all", presetVehicle = "all" 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
         <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-52">
+          <div className="relative flex-1 min-w-0">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -795,7 +795,61 @@ export default function AllRiders({ presetStatus = "all", presetVehicle = "all" 
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* ── Mobile card list ── */}
+        <div className="sm:hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center">
+              <p className="text-sm text-red-500 mb-2">{error}</p>
+              <button onClick={loadRiders} className="text-xs text-blue-600 hover:underline">Retry</button>
+            </div>
+          ) : riders.length === 0 ? (
+            <p className="p-6 text-center text-sm text-gray-400">
+              {search || status !== "all" ? "No riders match your filters" : "No riders yet"}
+            </p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {riders.map((rider) => (
+                <button
+                  key={rider.id}
+                  onClick={() => setSelectedRiderId(rider.id)}
+                  className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                      {rider.name?.charAt(0)?.toUpperCase() ?? "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-900 truncate">{rider.name}</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${STATUS_COLORS[rider.status] ?? "bg-gray-100 text-gray-700"}`}>
+                          {rider.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{rider.phone}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-xs text-gray-600 capitalize">{rider.vehicle_type} · {rider.plate_number}</span>
+                        {rider.average_rating > 0 && (
+                          <span className="flex items-center gap-0.5 text-xs text-amber-600">
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                            {Number(rider.average_rating).toFixed(1)}
+                          </span>
+                        )}
+                        <TrustBadge score={rider.rider_trust_score} />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop table ── */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

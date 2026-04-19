@@ -208,7 +208,7 @@ export default function AllCompanies() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl">
+    <div className="p-4 sm:p-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">All Companies</h1>
@@ -339,72 +339,78 @@ export default function AllCompanies() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* ── Mobile card list ── */}
+          <div className="sm:hidden divide-y divide-gray-100">
+            {filteredCompanies.map((company) => (
+              <button
+                key={company.id}
+                onClick={() => handleViewCompany(company)}
+                className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {company.logo_url ? (
+                    <img src={company.logo_url} alt={company.company_name} className="w-10 h-10 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">{company.company_name.charAt(0)}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{company.company_name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${company.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {company.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">{company.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {company.company_id && (
+                        <span className="text-xs font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">{company.company_id}</span>
+                      )}
+                      <span className="text-xs text-gray-400">{formatDate(company.approved_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Desktop table ── */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Company
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Company ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Address
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Reg. No.
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Date Approved
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company ID</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Reg. No.</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date Approved</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredCompanies.map((company) => (
-                  <tr
-                    key={company.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
+                  <tr key={company.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {company.logo_url ? (
-                          <img
-                            src={company.logo_url}
-                            alt={company.company_name}
-                            className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                          />
+                          <img src={company.logo_url} alt={company.company_name} className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
                         ) : (
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">
-                              {company.company_name.charAt(0)}
-                            </span>
+                            <span className="text-white font-bold text-sm">{company.company_name.charAt(0)}</span>
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-gray-900">
-                            {company.company_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            ID: {company.id.slice(0, 8)}
-                          </p>
+                          <p className="font-medium text-gray-900">{company.company_name}</p>
+                          <p className="text-xs text-gray-500">ID: {company.id.slice(0, 8)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm text-gray-900">{company.email}</p>
-                        <p className="text-xs text-gray-500">{company.phone}</p>
-                      </div>
+                      <p className="text-sm text-gray-900">{company.email}</p>
+                      <p className="text-xs text-gray-500">{company.phone}</p>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-mono font-semibold">
@@ -412,36 +418,21 @@ export default function AllCompanies() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900 max-w-[180px] truncate" title={company.company_address || "N/A"}>
-                        {company.company_address || "N/A"}
-                      </p>
+                      <p className="text-sm text-gray-900 max-w-[180px] truncate" title={company.company_address || "N/A"}>{company.company_address || "N/A"}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">
-                        {company.business_registration_number || "N/A"}
-                      </p>
+                      <p className="text-sm text-gray-900">{company.business_registration_number || "N/A"}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">
-                        {formatDate(company.approved_at)}
-                      </p>
+                      <p className="text-sm text-gray-900">{formatDate(company.approved_at)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          company.is_active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${company.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                         {company.is_active ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleViewCompany(company)}
-                        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                      >
+                      <button onClick={() => handleViewCompany(company)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">
                         View Details
                       </button>
                     </td>

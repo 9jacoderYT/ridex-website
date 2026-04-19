@@ -101,32 +101,45 @@ function RiderWalletsTable() {
       ) : data.length === 0 ? (
         <div className="flex justify-center py-10 text-gray-400 text-sm">No riders found</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {["Rider", "Phone", "Company", "Wallet Balance", "Total Earned", "Total Withdrawn"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {data.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{r.name}</p>
-                    <p className="text-xs text-gray-900">{r.email}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 text-xs">{r.phone || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{r.company_id ? "Company" : "Independent"}</td>
-                  <td className="px-4 py-3 font-semibold text-emerald-600">{fmt(r.wallet_balance)}</td>
-                  <td className="px-4 py-3 text-gray-700">{fmt(r.total_earned)}</td>
-                  <td className="px-4 py-3 text-gray-500">{fmt(r.total_withdrawn)}</td>
+        <>
+          <div className="sm:hidden divide-y divide-gray-100">
+            {data.map((r) => (
+              <div key={r.id} className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{r.name}</p>
+                  <p className="text-xs text-gray-500">{r.phone || "—"} · {r.company_id ? "Company" : "Independent"}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-semibold text-emerald-600">{fmt(r.wallet_balance)}</p>
+                  <p className="text-xs text-gray-400">Earned: {fmt(r.total_earned)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["Rider", "Phone", "Company", "Wallet Balance", "Total Earned", "Total Withdrawn"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3"><p className="font-medium text-gray-900">{r.name}</p><p className="text-xs text-gray-900">{r.email}</p></td>
+                    <td className="px-4 py-3 text-gray-600 text-xs">{r.phone || "—"}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{r.company_id ? "Company" : "Independent"}</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-600">{fmt(r.wallet_balance)}</td>
+                    <td className="px-4 py-3 text-gray-700">{fmt(r.total_earned)}</td>
+                    <td className="px-4 py-3 text-gray-500">{fmt(r.total_withdrawn)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {!loading && (
@@ -163,31 +176,44 @@ function CompanyWalletsTable() {
       ) : data.length === 0 ? (
         <div className="flex justify-center py-10 text-gray-400 text-sm">No company wallets yet</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {["Company", "Contact", "Balance", "Total Earned", "Total Withdrawn"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {data.map((c) => (
-                <tr key={c.company_id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{c.companies?.company_name || "—"}</p>
-                    <p className="text-xs text-gray-400">{c.companies?.company_id}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{c.companies?.email || "—"}</td>
-                  <td className="px-4 py-3 font-semibold text-emerald-600">{fmt(c.balance)}</td>
-                  <td className="px-4 py-3 text-gray-700">{fmt(c.total_earned)}</td>
-                  <td className="px-4 py-3 text-gray-500">{fmt(c.total_withdrawn)}</td>
+        <>
+          <div className="sm:hidden divide-y divide-gray-100">
+            {data.map((c) => (
+              <div key={c.company_id} className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{c.companies?.company_name || "—"}</p>
+                  <p className="text-xs text-gray-500">{c.companies?.email || "—"}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-semibold text-emerald-600">{fmt(c.balance)}</p>
+                  <p className="text-xs text-gray-400">Earned: {fmt(c.total_earned)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["Company", "Contact", "Balance", "Total Earned", "Total Withdrawn"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data.map((c) => (
+                  <tr key={c.company_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3"><p className="font-medium text-gray-900">{c.companies?.company_name || "—"}</p><p className="text-xs text-gray-400">{c.companies?.company_id}</p></td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{c.companies?.email || "—"}</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-600">{fmt(c.balance)}</td>
+                    <td className="px-4 py-3 text-gray-700">{fmt(c.total_earned)}</td>
+                    <td className="px-4 py-3 text-gray-500">{fmt(c.total_withdrawn)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -228,29 +254,39 @@ function UserWalletsTable() {
       ) : data.length === 0 ? (
         <div className="flex justify-center py-10 text-gray-400 text-sm">No users with wallet balance</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {["User", "Phone", "Wallet Balance"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {data.map((u) => (
-                <tr key={u.user_id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{u.full_name || "—"}</p>
-                    <p className="text-xs text-gray-400">{u.user_id}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{u.phone || "—"}</td>
-                  <td className="px-4 py-3 font-semibold text-blue-600">{fmt(u.wallet_balance)}</td>
+        <>
+          <div className="sm:hidden divide-y divide-gray-100">
+            {data.map((u) => (
+              <div key={u.user_id} className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{u.full_name || "—"}</p>
+                  <p className="text-xs text-gray-500">{u.phone || "—"}</p>
+                </div>
+                <p className="text-sm font-semibold text-blue-600 flex-shrink-0">{fmt(u.wallet_balance)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {["User", "Phone", "Wallet Balance"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data.map((u) => (
+                  <tr key={u.user_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3"><p className="font-medium text-gray-900">{u.full_name || "—"}</p><p className="text-xs text-gray-400">{u.user_id}</p></td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{u.phone || "—"}</td>
+                    <td className="px-4 py-3 font-semibold text-blue-600">{fmt(u.wallet_balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {!loading && (
@@ -276,7 +312,7 @@ export default function WalletOverviewPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Wallet Overview</h1>

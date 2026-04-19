@@ -52,7 +52,7 @@ export default function PerformancePage() {
   const lowRated = riders.filter((r) => (r.average_rating || 0) > 0 && (r.average_rating || 0) < 3).length;
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="p-4 sm:p-6 max-w-5xl">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Rider Performance</h1>
         <p className="text-sm text-gray-500 mt-1">Ratings and performance metrics for all riders</p>

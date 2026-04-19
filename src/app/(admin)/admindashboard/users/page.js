@@ -139,7 +139,7 @@ export default function UsersManagementPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl">
+    <div className="p-4 sm:p-6 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -220,7 +220,61 @@ export default function UsersManagementPage() {
 
       {/* Users Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* ── Mobile card list ── */}
+        <div className="sm:hidden">
+          {isLoading ? (
+            <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-center py-8 text-gray-500 text-sm">No staff members found</p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filteredUsers.map((user) => {
+                const status = getUserStatus(user);
+                const initials = (user.full_name || user.email || "?").charAt(0).toUpperCase();
+                const isSelf = admin?.id === user.id;
+                return (
+                  <div key={user.id} className="p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm font-semibold">{initials}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">
+                          {user.full_name || user.username || "—"}
+                          {isSelf && <span className="ml-1 text-xs text-gray-400">(you)</span>}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${status.color}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role_name] || "bg-gray-100 text-gray-800"}`}>
+                        {user.role_name}
+                      </span>
+                      <span className="text-xs text-gray-400">Last login: {user.last_login_time ? new Date(user.last_login_time).toLocaleDateString() : "Never"}</span>
+                    </div>
+                    {isSuperAdmin && !isSelf && (
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={() => setEditUser({ id: user.id, role_name: user.role_name, full_name: user.full_name || user.email })} className="flex-1 py-1.5 text-xs border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50" disabled={isPending}>Change Role</button>
+                        {user.password_set && (
+                          <button onClick={() => handleSuspend(user, !user.is_suspended)} className={`flex-1 py-1.5 text-xs rounded-lg border ${user.is_suspended ? "border-green-200 text-green-700" : "border-amber-200 text-amber-700"}`} disabled={isPending}>
+                            {user.is_suspended ? "Unsuspend" : "Suspend"}
+                          </button>
+                        )}
+                        <button onClick={() => setDeleteTarget({ id: user.id, email: user.email, full_name: user.full_name })} className="px-3 py-1.5 text-xs border border-red-200 text-red-700 rounded-lg hover:bg-red-50" disabled={isPending}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop table ── */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -235,25 +289,14 @@ export default function UsersManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center">
-                    <div className="flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center"><div className="flex items-center justify-center"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div></td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">
-                    No staff members found
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 text-sm">No staff members found</td></tr>
               ) : (
                 filteredUsers.map((user) => {
                   const status = getUserStatus(user);
                   const initials = (user.full_name || user.email || "?").charAt(0).toUpperCase();
                   const isSelf = admin?.id === user.id;
-
                   return (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4">
@@ -281,42 +324,21 @@ export default function UsersManagementPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-500">
-                        {user.last_login_time
-                          ? new Date(user.last_login_time).toLocaleDateString()
-                          : "Never"}
+                        {user.last_login_time ? new Date(user.last_login_time).toLocaleDateString() : "Never"}
                       </td>
                       {isSuperAdmin && (
                         <td className="px-4 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Change role */}
                             {!isSelf && (
-                              <button
-                                onClick={() => setEditUser({ id: user.id, role_name: user.role_name, full_name: user.full_name || user.email })}
-                                className="px-3 py-1.5 text-xs border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                                disabled={isPending}
-                              >
-                                Change Role
-                              </button>
+                              <button onClick={() => setEditUser({ id: user.id, role_name: user.role_name, full_name: user.full_name || user.email })} className="px-3 py-1.5 text-xs border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors" disabled={isPending}>Change Role</button>
                             )}
-                            {/* Suspend / Unsuspend */}
                             {!isSelf && user.password_set && (
-                              <button
-                                onClick={() => handleSuspend(user, !user.is_suspended)}
-                                className={`px-3 py-1.5 text-xs rounded-lg transition-colors border ${user.is_suspended ? "border-green-200 text-green-700 hover:bg-green-50" : "border-amber-200 text-amber-700 hover:bg-amber-50"}`}
-                                disabled={isPending}
-                              >
+                              <button onClick={() => handleSuspend(user, !user.is_suspended)} className={`px-3 py-1.5 text-xs rounded-lg transition-colors border ${user.is_suspended ? "border-green-200 text-green-700 hover:bg-green-50" : "border-amber-200 text-amber-700 hover:bg-amber-50"}`} disabled={isPending}>
                                 {user.is_suspended ? "Unsuspend" : "Suspend"}
                               </button>
                             )}
-                            {/* Delete */}
                             {!isSelf && (
-                              <button
-                                onClick={() => setDeleteTarget({ id: user.id, email: user.email, full_name: user.full_name })}
-                                className="px-3 py-1.5 text-xs border border-red-200 text-red-700 rounded-lg hover:bg-red-50 transition-colors"
-                                disabled={isPending}
-                              >
-                                Delete
-                              </button>
+                              <button onClick={() => setDeleteTarget({ id: user.id, email: user.email, full_name: user.full_name })} className="px-3 py-1.5 text-xs border border-red-200 text-red-700 rounded-lg hover:bg-red-50 transition-colors" disabled={isPending}>Delete</button>
                             )}
                           </div>
                         </td>

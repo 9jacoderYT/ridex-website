@@ -103,7 +103,7 @@ export default function FailedPayments() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Failed Payments</h1>
@@ -154,48 +154,78 @@ export default function FailedPayments() {
         ) : payments.length === 0 ? (
           <div className="text-center py-16 text-gray-400">No failed payments found.</div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                {["Date", "User ID", "Type", "Amount", "Tx Ref", "Error", "Status", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <>
+            {/* ── Mobile card list ── */}
+            <div className="sm:hidden divide-y divide-gray-100">
               {payments.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{fmt(p.created_at)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.user_id || "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                      {TYPE_LABELS[p.payment_type] || p.payment_type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                    {p.amount ? `₦${Number(p.amount).toLocaleString()}` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 font-mono">{p.tx_ref || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{p.error_message}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-600"}`}>
+                <button
+                  key={p.id}
+                  onClick={() => { setSelected(p); setNotes(p.notes || ""); setShowCreditForm(false); }}
+                  className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-sm font-semibold text-gray-900">{p.amount ? `₦${Number(p.amount).toLocaleString()}` : "—"}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-600"}`}>
                       {p.status}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => { setSelected(p); setNotes(p.notes || ""); setShowCreditForm(false); }}
-                      className="text-blue-600 text-sm font-medium hover:underline"
-                    >
-                      Review
-                    </button>
-                  </td>
-                </tr>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">{p.error_message || "—"}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                      {TYPE_LABELS[p.payment_type] || p.payment_type}
+                    </span>
+                    <span className="text-xs text-gray-400">{fmt(p.created_at)}</span>
+                  </div>
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* ── Desktop table ── */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    {["Date", "User ID", "Type", "Amount", "Tx Ref", "Error", "Status", ""].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {payments.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{fmt(p.created_at)}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.user_id || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                          {TYPE_LABELS[p.payment_type] || p.payment_type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                        {p.amount ? `₦${Number(p.amount).toLocaleString()}` : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 font-mono">{p.tx_ref || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{p.error_message}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-600"}`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => { setSelected(p); setNotes(p.notes || ""); setShowCreditForm(false); }}
+                          className="text-blue-600 text-sm font-medium hover:underline"
+                        >
+                          Review
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

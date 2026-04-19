@@ -285,7 +285,7 @@ export default function SupportTickets() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
@@ -369,21 +369,25 @@ export default function SupportTickets() {
         ) : tickets.length === 0 ? (
           <div className="text-center py-16 text-gray-400">No tickets found.</div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                {["Ticket #", "Source", "Submitter", "Subject", "Category", "Status", "Date", "Reply", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <>
+            {/* ── Mobile card list ── */}
+            <div className="sm:hidden divide-y divide-gray-100">
               {tickets.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-mono font-bold text-blue-600">{t.ticket_number}</td>
-                  <td className="px-4 py-3">
+                <button
+                  key={t.id}
+                  onClick={() => openTicket(t)}
+                  className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-sm font-mono font-bold text-blue-600">{t.ticket_number}</p>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[t.status]}`}>
+                        {t.status === "in_progress" ? "In Progress" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-800 font-medium truncate">{t.subject}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
                     {t.ticket_source === "rider" ? (
                       <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-700">🛵 Rider</span>
                     ) : t.ticket_source === "company" ? (
@@ -391,53 +395,76 @@ export default function SupportTickets() {
                     ) : (
                       <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-600">👤 User</span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {t.ticket_source === "rider" ? (
-                      <>
-                        <span className="font-medium">{t.rider_id || "—"}</span>
-                        {t.rider_id && <span className="block text-xs text-gray-400 font-mono">{t.rider_id}</span>}
-                      </>
-                    ) : t.ticket_source === "company" ? (
-                      <>
-                        <span className="font-medium">{t.company_name || "—"}</span>
-                        {t.company_id && <span className="block text-xs text-gray-400 font-mono">{t.company_id.slice(0, 8)}…</span>}
-                      </>
-                    ) : (
-                      <>
-                        <span className="font-medium">{t.user_full_name || t.user_id || "—"}</span>
-                        {t.user_id && <span className="block text-xs text-gray-400 font-mono">{t.user_id}</span>}
-                      </>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate font-medium">{t.subject}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${CATEGORY_COLORS[t.category] || "bg-gray-100 text-gray-600"}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${CATEGORY_COLORS[t.category] || "bg-gray-100 text-gray-600"}`}>
                       {CATEGORY_LABELS[t.category] || t.category}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[t.status]}`}>
-                      {t.status === "in_progress" ? "In Progress" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmt(t.created_at)}</td>
-                  <td className="px-4 py-3">
-                    {t.admin_reply ? (
-                      <span className="text-xs text-green-600 font-semibold">✓ Replied</span>
-                    ) : (
-                      <span className="text-xs text-amber-500 font-medium">Pending</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => openTicket(t)} className="text-blue-600 text-sm font-medium hover:underline">
-                      Open
-                    </button>
-                  </td>
-                </tr>
+                    <span className="text-xs text-gray-400 ml-auto">{fmt(t.created_at)}</span>
+                  </div>
+                  {!t.admin_reply && (
+                    <p className="text-xs text-amber-600 font-medium mt-1">⚠ Awaiting reply</p>
+                  )}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* ── Desktop table ── */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    {["Ticket #", "Source", "Submitter", "Subject", "Category", "Status", "Date", "Reply", ""].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {tickets.map((t) => (
+                    <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-mono font-bold text-blue-600">{t.ticket_number}</td>
+                      <td className="px-4 py-3">
+                        {t.ticket_source === "rider" ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-700">🛵 Rider</span>
+                        ) : t.ticket_source === "company" ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">🏢 Company</span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-600">👤 User</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {t.ticket_source === "rider" ? (
+                          <><span className="font-medium">{t.rider_id || "—"}</span>{t.rider_id && <span className="block text-xs text-gray-400 font-mono">{t.rider_id}</span>}</>
+                        ) : t.ticket_source === "company" ? (
+                          <><span className="font-medium">{t.company_name || "—"}</span>{t.company_id && <span className="block text-xs text-gray-400 font-mono">{t.company_id.slice(0, 8)}…</span>}</>
+                        ) : (
+                          <><span className="font-medium">{t.user_full_name || t.user_id || "—"}</span>{t.user_id && <span className="block text-xs text-gray-400 font-mono">{t.user_id}</span>}</>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800 max-w-xs truncate font-medium">{t.subject}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${CATEGORY_COLORS[t.category] || "bg-gray-100 text-gray-600"}`}>
+                          {CATEGORY_LABELS[t.category] || t.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[t.status]}`}>
+                          {t.status === "in_progress" ? "In Progress" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmt(t.created_at)}</td>
+                      <td className="px-4 py-3">
+                        {t.admin_reply ? <span className="text-xs text-green-600 font-semibold">✓ Replied</span> : <span className="text-xs text-amber-500 font-medium">Pending</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => openTicket(t)} className="text-blue-600 text-sm font-medium hover:underline">Open</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

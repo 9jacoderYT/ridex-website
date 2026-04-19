@@ -224,7 +224,7 @@ export default function WithdrawalsPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -262,13 +262,13 @@ export default function WithdrawalsPage() {
       ) : (
         <>
           {/* Filters */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 sm:items-center">
+            <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1">
               {["pending", "approved", "completed", "rejected", "failed", "all"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-colors ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
                     statusFilter === s ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -276,12 +276,12 @@ export default function WithdrawalsPage() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
               {["all", "rider", "company"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setTypeFilter(t)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-colors ${
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
                     typeFilter === t ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
@@ -289,7 +289,7 @@ export default function WithdrawalsPage() {
                 </button>
               ))}
             </div>
-            <button onClick={load} className="ml-auto text-xs text-blue-600 hover:underline">Refresh</button>
+            <button onClick={load} className="sm:ml-auto text-xs text-blue-600 hover:underline">Refresh</button>
           </div>
 
           {/* Table */}
@@ -304,76 +304,101 @@ export default function WithdrawalsPage() {
                 <p className="text-sm">No withdrawal requests found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      {["Requester", "Type", "Amount", "Bank Details", "Status", "Requested", "Actions"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {withdrawals.map((wr) => (
-                      <tr key={wr.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-gray-900">{wr.requester_name || "—"}</p>
+              <>
+                {/* ── Mobile card list ── */}
+                <div className="sm:hidden divide-y divide-gray-100">
+                  {withdrawals.map((wr) => (
+                    <div key={wr.id} className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{wr.requester_name || "—"}</p>
                           <p className="text-xs text-gray-400">{wr.requester_ref}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${wr.requester_type === "rider" ? "bg-blue-50 text-blue-700" : "bg-violet-50 text-violet-700"}`}>
-                            {wr.requester_type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-gray-900">{fmt(wr.amount)}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-medium">{wr.bank_name}</p>
-                          <p className="text-xs text-gray-500">{wr.account_number}</p>
-                          <p className="text-xs text-gray-400">{wr.account_name}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[wr.status] || "bg-gray-100 text-gray-600"}`}>
-                            {wr.status}
-                          </span>
-                          {wr.failure_reason && (
-                            <p className="text-xs text-red-500 mt-0.5 max-w-[140px]" title={wr.failure_reason}>
-                              {wr.failure_reason.slice(0, 40)}…
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">
-                          {new Date(wr.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
-                          <br />
-                          {new Date(wr.created_at).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            {wr.status === "pending" && (
-                              <>
-                                <button
-                                  onClick={() => setModal({ wr, action: "approve" })}
-                                  className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => setModal({ wr, action: "reject" })}
-                                  className="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 font-medium border border-red-200"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                            {wr.status === "approved" && (
-                              <span className="text-xs text-blue-600 font-medium">Awaiting transfer</span>
-                            )}
-                          </div>
-                        </td>
+                        </div>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize flex-shrink-0 ${STATUS_COLORS[wr.status] || "bg-gray-100 text-gray-600"}`}>
+                          {wr.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-base font-bold text-gray-900">{fmt(wr.amount)}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${wr.requester_type === "rider" ? "bg-blue-50 text-blue-700" : "bg-violet-50 text-violet-700"}`}>
+                          {wr.requester_type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600">{wr.bank_name} · {wr.account_number}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{new Date(wr.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      {wr.failure_reason && <p className="text-xs text-red-500 mt-1">{wr.failure_reason}</p>}
+                      {wr.status === "pending" && (
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => setModal({ wr, action: "approve" })} className="flex-1 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium">Approve</button>
+                          <button onClick={() => setModal({ wr, action: "reject" })} className="flex-1 py-2 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 font-medium border border-red-200">Reject</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Desktop table ── */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        {["Requester", "Type", "Amount", "Bank Details", "Status", "Requested", "Actions"].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {withdrawals.map((wr) => (
+                        <tr key={wr.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900">{wr.requester_name || "—"}</p>
+                            <p className="text-xs text-gray-400">{wr.requester_ref}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${wr.requester_type === "rider" ? "bg-blue-50 text-blue-700" : "bg-violet-50 text-violet-700"}`}>
+                              {wr.requester_type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-gray-900">{fmt(wr.amount)}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium">{wr.bank_name}</p>
+                            <p className="text-xs text-gray-500">{wr.account_number}</p>
+                            <p className="text-xs text-gray-400">{wr.account_name}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${STATUS_COLORS[wr.status] || "bg-gray-100 text-gray-600"}`}>
+                              {wr.status}
+                            </span>
+                            {wr.failure_reason && (
+                              <p className="text-xs text-red-500 mt-0.5 max-w-[140px]" title={wr.failure_reason}>
+                                {wr.failure_reason.slice(0, 40)}…
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500">
+                            {new Date(wr.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
+                            <br />
+                            {new Date(wr.created_at).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              {wr.status === "pending" && (
+                                <>
+                                  <button onClick={() => setModal({ wr, action: "approve" })} className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-medium">Approve</button>
+                                  <button onClick={() => setModal({ wr, action: "reject" })} className="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 font-medium border border-red-200">Reject</button>
+                                </>
+                              )}
+                              {wr.status === "approved" && (
+                                <span className="text-xs text-blue-600 font-medium">Awaiting transfer</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>

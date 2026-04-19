@@ -234,7 +234,7 @@ export default function AppUsers() {
   const userRole = detail?.role || selected?.role;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">App Users</h1>
@@ -284,7 +284,34 @@ export default function AppUsers() {
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-gray-400 text-sm">No users found.</div>
         ) : (
-          <div className="overflow-x-auto">
+          {/* ── Mobile card list ── */}
+          <div className="sm:hidden divide-y divide-gray-100">
+            {users.map((u) => (
+              <button
+                key={u.user_id}
+                onClick={() => openUser(u)}
+                className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-sm font-semibold text-gray-900">{u.full_name || "—"}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${
+                    u.role === "business" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {u.role === "business" ? "Business" : "Individual"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">{u.phone || "—"}</p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-xs font-medium text-gray-700">{fmtMoney(u.wallet_balance)}</span>
+                  <UserTrustBadge score={u.user_trust_score} />
+                  <span className="text-xs text-gray-400 ml-auto">{fmtShort(u.created_at)}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Desktop table ── */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>

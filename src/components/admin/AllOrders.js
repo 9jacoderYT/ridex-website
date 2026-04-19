@@ -393,7 +393,7 @@ export default function AllOrders({ presetStatus = "all" }) {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div className="p-6 max-w-7xl">
+    <div className="p-4 sm:p-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">All Orders</h1>
@@ -423,7 +423,7 @@ export default function AllOrders({ presetStatus = "all" }) {
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
         <div className="flex flex-wrap gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-52">
+          <div className="relative flex-1 min-w-0">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -464,7 +464,62 @@ export default function AllOrders({ presetStatus = "all" }) {
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* ── Mobile card list ── */}
+        <div className="sm:hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center">
+              <p className="text-sm text-red-500 mb-2">{error}</p>
+              <button onClick={loadOrders} className="text-xs text-blue-600 hover:underline">Retry</button>
+            </div>
+          ) : orders.length === 0 ? (
+            <p className="p-6 text-center text-sm text-gray-400">
+              {search || status !== "all" ? "No orders match your filters" : "No orders yet"}
+            </p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {orders.map((order) => (
+                <button
+                  key={order.id}
+                  onClick={() => setSelectedOrderId(order.id)}
+                  className="w-full text-left p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <p className="text-sm font-mono font-medium text-gray-900">
+                      {order.order_id ?? order.id?.slice(0, 8)}
+                    </p>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <StatusBadge status={order.status} />
+                      {order.payment_type === "pay_on_delivery" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">COD</span>
+                      )}
+                    </div>
+                  </div>
+                  {order.tracking_number && (
+                    <p className="text-xs text-gray-400 font-mono mb-1">{order.tracking_number}</p>
+                  )}
+                  <p className="text-xs text-gray-600 truncate">{order.pickup_address ?? "—"}</p>
+                  <p className="text-xs text-gray-400 truncate">→ {order.dropoff_address ?? "—"}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-xs font-semibold text-gray-900">{fmt(totalFee(order))}</span>
+                    {order.delivery_type && (
+                      <span className="text-xs text-gray-500 capitalize">{order.delivery_type}</span>
+                    )}
+                    <span className="text-xs text-gray-400 ml-auto">
+                      {order.created_at ? new Date(order.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" }) : "—"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop table ── */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

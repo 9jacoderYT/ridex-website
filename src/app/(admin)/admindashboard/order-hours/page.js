@@ -62,7 +62,7 @@ export default function OrderHoursPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-lg font-semibold text-gray-900">Order Hours</h1>
