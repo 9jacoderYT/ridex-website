@@ -284,6 +284,7 @@ export default function AppUsers() {
         ) : users.length === 0 ? (
           <div className="text-center py-16 text-gray-400 text-sm">No users found.</div>
         ) : (
+          <>
           {/* ── Mobile card list ── */}
           <div className="sm:hidden divide-y divide-gray-100">
             {users.map((u) => (
@@ -351,6 +352,7 @@ export default function AppUsers() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
