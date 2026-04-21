@@ -4,6 +4,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { loginCompany } from "@/lib/server-actions/company/loginCompany";
 import ForgotPasswordModal from "@/components/company/ForgotPasswordModal";
 
@@ -69,6 +70,16 @@ export default function CompanyLogin() {
         </div>
 
         <div className="relative z-10">
+          {/* Back to Home — desktop left panel */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-emerald-200 hover:text-white text-sm font-medium mb-8 transition-colors group"
+          >
+            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Home
+          </Link>
           <div className="flex items-center gap-3 mb-12">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-xl flex items-center justify-center shadow-lg">
               <svg
@@ -194,6 +205,17 @@ export default function CompanyLogin() {
       {/* Right Panel - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
+          {/* Back to Home — mobile/tablet (hidden on desktop since left panel has it) */}
+          <Link
+            href="/"
+            className="lg:hidden inline-flex items-center gap-2 text-gray-500 hover:text-emerald-600 text-sm font-medium mb-6 transition-colors group"
+          >
+            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Home
+          </Link>
+
           {/* Mobile/Tablet Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
