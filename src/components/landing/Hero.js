@@ -241,25 +241,31 @@ export default function Hero() {
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
               >
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    href={active.cta.href}
-                    className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r ${active.color} text-white font-semibold rounded-full shadow-lg transition-all`}
-                  >
-                    <span>{active.cta.text}</span>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {active.cta.href.startsWith("#") ? (
+                    <a
+                      href={active.cta.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById(active.cta.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r ${active.color} text-white font-semibold rounded-full shadow-lg transition-all`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 7l5 5m0 0l-5 5m5-5H6"
-                      />
-                    </svg>
-                  </Link>
+                      <span>{active.cta.text}</span>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </a>
+                  ) : (
+                    <Link
+                      href={active.cta.href}
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r ${active.color} text-white font-semibold rounded-full shadow-lg transition-all`}
+                    >
+                      <span>{active.cta.text}</span>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </Link>
+                  )}
                 </motion.div>
 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
