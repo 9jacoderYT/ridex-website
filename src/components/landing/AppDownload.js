@@ -100,7 +100,7 @@ export default function AppDownload() {
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  href="https://drive.google.com/file/d/1fSoODEUXPGvP-i2yD7plMx412fKHt9Wf/view?usp=sharing"
+                  href="https://drive.google.com/file/d/1XMZ0ywCTybivbe3l3hMBW7wTjgoCYWYs/view?usp=drive_link"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-xl transition-all shadow-md"
