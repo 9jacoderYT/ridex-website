@@ -100,7 +100,7 @@ export default function AppDownload() {
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  href="https://drive.google.com/file/d/1XMZ0ywCTybivbe3l3hMBW7wTjgoCYWYs/view?usp=drive_link"
+                  href="https://drive.google.com/file/d/1SvxfOLOHEvvQXY9YnyoR2s-9uF0SBW5a/view?usp=drive_link"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-xl transition-all shadow-md"
@@ -166,7 +166,7 @@ export default function AppDownload() {
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  href="https://drive.google.com/file/d/1j_nFvZo7qmFkWQ93EUe9srUR68u-PPiF/view?usp=sharing"
+                  href="https://drive.google.com/file/d/1JiyqtUW9uN46NfFWyTxLMa-coUG78a0O/view?usp=drive_link"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-xl transition-all shadow-md"
