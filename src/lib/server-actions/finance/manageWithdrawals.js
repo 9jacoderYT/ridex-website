@@ -276,8 +276,7 @@ export async function getPlatformSettings() {
 export async function updatePlatformSettings({ platformFeePercentage, minRiderWithdrawal, minCompanyWithdrawal, maxWeeklyWithdrawals }) {
   try {
     const payload = await verifyAdminSession();
-    const { data: admin } = await supabaseAdmin.from("admin_users").select("role_name").eq("username", payload.username).single();
-    if (admin?.role_name !== "Super Admin") return { success: false, error: "Only Super Admin can change platform settings" };
+    if (payload.role !== "Super Admin") return { success: false, error: "Only Super Admin can change platform settings" };
 
     const { error } = await supabaseAdmin
       .from("platform_settings")
